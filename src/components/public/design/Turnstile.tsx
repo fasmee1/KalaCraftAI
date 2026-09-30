@@ -35,7 +35,10 @@ export function Turnstile({ onToken, resetKey }: { onToken: (token: string | nul
     const id = window.turnstile.render(containerRef.current, {
       sitekey: siteKey,
       language: "th",
+      theme: "light", // เว็บเป็นธีมสว่าง — ไม่ให้ตามโหมดมืดของเครื่อง
       size: "flexible",
+      // ซ่อนกล่องไว้ ขึ้นมาให้กดเฉพาะเมื่อ Cloudflare สงสัยว่าเป็นบอท — ลูกค้าทั่วไปไม่เห็นอะไรเลย
+      appearance: "interaction-only",
       callback: (token: string) => onTokenRef.current(token),
       "expired-callback": () => onTokenRef.current(null),
       "error-callback": () => onTokenRef.current(null),
@@ -65,7 +68,8 @@ export function Turnstile({ onToken, resetKey }: { onToken: (token: string | nul
         strategy="afterInteractive"
         onReady={() => setLoaded(true)}
       />
-      <div ref={containerRef} className="min-h-[65px]" />
+      {/* ไม่จองความสูงไว้ — ว่างเมื่อไม่ต้องกด, ขยายเองเมื่อ Cloudflare ขอให้ยืนยัน */}
+      <div ref={containerRef} className="empty:hidden [&:has(iframe)]:mb-2" />
     </>
   );
 }

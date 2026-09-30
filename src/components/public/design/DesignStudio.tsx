@@ -34,8 +34,19 @@ function selectionLabels(catalog: DesignCatalog, s: DesignSelection): string[] {
   return labels.filter((l): l is string => !!l);
 }
 
+/** เปิด popup พร้อมเลือกสินค้าไว้ให้ — เปลี่ยน nonce ทุกครั้งที่กด (กดสินค้าเดิมซ้ำก็เปิดได้) */
+export type DesignPreselect = { categoryId: string; productId: string; nonce: number };
+
 /** ปุ่ม "สร้างดีไซน์ด้วย AI" + popup เลือกข้อมูล → สร้างเสร็จแล้วไปหน้าผลลัพธ์ */
-export function DesignStudio({ catalog, className }: { catalog: DesignCatalog; className?: string }) {
+export function DesignStudio({
+  catalog,
+  className,
+  preselect,
+}: {
+  catalog: DesignCatalog;
+  className?: string;
+  preselect?: DesignPreselect | null;
+}) {
   const router = useRouter();
   const titleId = useId();
   const [open, setOpen] = useState(false);
@@ -58,6 +69,15 @@ export function DesignStudio({ catalog, className }: { catalog: DesignCatalog; c
     if (previous) setSelection(previous);
     setOpen(true);
   }, []);
+
+  // กดการ์ดสินค้า → เลือกประเภท+สินค้าให้ คงตัวเลือกอื่นที่เคยเลือกไว้
+  useEffect(() => {
+    if (!preselect) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- เปิด popup ตามการกดการ์ดจาก component แม่
+    setSelection((s) => ({ ...s, categoryId: preselect.categoryId, productId: preselect.productId }));
+    setError(null);
+    setOpen(true);
+  }, [preselect]);
 
   const close = useCallback(() => {
     if (loading) return;
@@ -170,8 +190,13 @@ export function DesignStudio({ catalog, className }: { catalog: DesignCatalog; c
 
             <footer className="border-t border-border bg-white px-5 pb-5 pt-3">
               {error && <ErrorNote message={error} />}
-              <p className={`mb-2 flex items-center gap-1.5 text-xs ${ready ? "text-secondary" : "text-ink-muted"}`}>
-                {ready ? (
+              <p className={`mb-2 flex items-center gap-1.5 text-xs ${ready && token ? "text-secondary" : "text-ink-muted"}`}>
+                {ready && !token ? (
+                  // Turnstile แบบซ่อน: รอ token สักครู่ก่อนปุ่มกดได้ — บอกให้รู้ว่าไม่ได้ค้าง
+                  <>
+                    <LoaderCircle size={14} className="animate-spin" /> กำลังตรวจสอบความปลอดภัยก่อนสร้างภาพ…
+                  </>
+                ) : ready ? (
                   <>
                     <CircleCheck size={14} /> ข้อมูลครบแล้ว · พร้อมสร้างภาพขนาด {selection.aspectRatio}
                   </>

@@ -21,6 +21,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { requestDesign } from "./designApi";
 import { ErrorNote, GeneratingOverlay } from "./DesignStudio";
 import { loadDesign, saveDesign, saveEditSelection, type StoredDesign } from "./designStore";
+import { base64ToFile, saveImage } from "./imageDownload";
 import { Turnstile } from "./Turnstile";
 
 const FB_PAGE = process.env.NEXT_PUBLIC_FB_PAGE;
@@ -48,7 +49,9 @@ export function DesignResultView() {
   // undefined = ยังไม่ได้อ่านจาก sessionStorage (รอ mount), null = ไม่มีภาพ
   const [design, setDesign] = useState<StoredDesign | null | undefined>(undefined);
   const [now, setNow] = useState(() => Date.now());
-  const [expanded, setExpanded] = useState(false);
+  // "view" = ดูภาพเต็มจอ, "save" = ภาพเต็มจอพร้อมวิธีบันทึกเอง (เบราว์เซอร์ที่ดาวน์โหลดไม่ได้)
+  const [expanded, setExpanded] = useState<false | "view" | "save">(false);
+  const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [turnstileReset, setTurnstileReset] = useState(0);
@@ -93,8 +96,7 @@ export function DesignResultView() {
   const share = async () => {
     const text = `ดีไซน์กะลามะพร้าวจาก KalaCraft AI · รหัส ${design.designCode}`;
     try {
-      const blob = await (await fetch(src)).blob();
-      const file = new File([blob], fileName, { type: design.mimeType });
+      const file = base64ToFile(design.imageBase64, design.mimeType, fileName);
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], text });
         return;
@@ -107,6 +109,20 @@ export function DesignResultView() {
       if ((err as Error).name === "AbortError") return; // ผู้ใช้ปิดหน้าต่างแชร์เอง
     }
     await copyCode("อุปกรณ์นี้แชร์ไม่ได้ — คัดลอกรหัสดีไซน์ให้แล้ว");
+  };
+
+  const download = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const result = await saveImage(design.imageBase64, design.mimeType, fileName);
+      if (result === "manual") setExpanded("save");
+      else if (result === "downloaded") setToast(`ดาวน์โหลด ${fileName} แล้ว`);
+    } catch {
+      setExpanded("save");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const sendToPage = async () => {
@@ -139,7 +155,7 @@ export function DesignResultView() {
   };
 
   return (
-    <div className="mx-auto min-h-dvh w-full max-w-[1200px] bg-cream pb-[190px] lg:px-10 lg:pb-16">
+    <div className="mx-auto min-h-dvh w-full max-w-[1200px] bg-cream pb-[215px] lg:px-10 lg:pb-16">
       <header className="flex items-center justify-between px-4 pt-3.5 lg:justify-start lg:gap-4 lg:px-0 lg:pt-8">
         <Link
           href="/"
@@ -166,7 +182,7 @@ export function DesignResultView() {
             <img src={src} alt={`ดีไซน์ ${design.designCode}`} className="size-full object-cover" />
             <button
               type="button"
-              onClick={() => setExpanded(true)}
+              onClick={() => setExpanded("view")}
               aria-label="ดูภาพเต็มจอ"
               className="absolute right-4 top-4 flex size-9 items-center justify-center rounded-full bg-white/90 text-ink shadow hover:bg-white"
             >
@@ -215,8 +231,9 @@ export function DesignResultView() {
                 </div>
                 <p className="mt-0.5 truncate text-xs text-ink-muted">{design.product.name}</p>
                 <ul className="mt-2 flex flex-wrap gap-1.5">
-                  {design.labels.map((label) => (
-                    <li key={label} className="rounded-md bg-beige px-2 py-0.5 text-xs text-ink">
+                  {/* ชื่อซ้ำกันได้ข้ามหมวด (เช่น สไตล์ "ลายไทย" + ลวดลาย "ลายไทย") — key ต้องรวมตำแหน่งด้วย */}
+                  {design.labels.map((label, i) => (
+                    <li key={`${i}-${label}`} className="rounded-md bg-beige px-2 py-0.5 text-xs text-ink">
                       {label}
                     </li>
                   ))}
@@ -248,15 +265,23 @@ export function DesignResultView() {
                 <RefreshCw size={19} className={regenerating ? "animate-spin" : ""} />
                 สร้างใหม่
               </button>
-              <a
-                href={src}
-                download={fileName}
-                className="flex h-[52px] flex-[1.2] items-center justify-center gap-2 rounded-[14px] bg-primary text-base font-semibold text-cream hover:bg-primary-hover"
+              <button
+                type="button"
+                onClick={download}
+                disabled={saving}
+                className="flex h-[52px] flex-[1.2] items-center justify-center gap-2 rounded-[14px] bg-primary text-base font-semibold text-cream hover:bg-primary-hover disabled:opacity-70"
               >
                 <Download size={19} />
                 ดาวน์โหลดภาพ
-              </a>
+              </button>
             </div>
+            <button
+              type="button"
+              onClick={() => setExpanded("save")}
+              className="mx-auto mt-2 block text-xs text-ink-muted underline-offset-2 hover:text-primary hover:underline"
+            >
+              ดาวน์โหลดไม่ได้? บันทึกจากรูปโดยตรง
+            </button>
           </footer>
         </section>
       </div>
@@ -264,7 +289,7 @@ export function DesignResultView() {
       {toast && (
         <div
           role="status"
-          className="fixed inset-x-4 bottom-[200px] z-30 mx-auto flex max-w-sm items-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm text-cream shadow-lg lg:bottom-8"
+          className="fixed inset-x-4 bottom-[225px] z-30 mx-auto flex max-w-sm items-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm text-cream shadow-lg lg:bottom-8"
         >
           <Check size={16} className="shrink-0 text-accent" />
           {toast}
@@ -275,14 +300,27 @@ export function DesignResultView() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="ภาพเต็มจอ"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/90 p-4"
+          aria-label={expanded === "save" ? "บันทึกรูปภาพ" : "ภาพเต็มจอ"}
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-ink/90 p-4 pt-16"
           onClick={() => setExpanded(false)}
         >
+          {expanded === "save" && (
+            <p className="max-w-sm rounded-2xl bg-white px-4 py-3 text-center text-sm leading-relaxed text-ink">
+              <span className="font-semibold text-primary">กดค้างที่รูป</span> แล้วเลือก “บันทึกรูปภาพ” / “เพิ่มไปยังรูปภาพ”
+              <span className="mt-1 block text-xs text-ink-muted">บนคอมพิวเตอร์: คลิกขวาที่รูป → “บันทึกรูปภาพเป็น…”</span>
+            </p>
+          )}
+          {/* กดที่รูปไม่ปิดหน้าต่าง — ให้กดค้างเพื่อบันทึกได้ */}
           {/* eslint-disable-next-line @next/next/no-img-element -- รูป base64 */}
-          <img src={src} alt={`ดีไซน์ ${design.designCode}`} className="max-h-full max-w-full rounded-2xl object-contain" />
+          <img
+            src={src}
+            alt={`ดีไซน์ ${design.designCode}`}
+            onClick={(e) => e.stopPropagation()}
+            className="min-h-0 max-w-full flex-1 rounded-2xl object-contain"
+          />
           <button
             type="button"
+            onClick={() => setExpanded(false)}
             aria-label="ปิด"
             className="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full bg-white/90 text-ink"
           >

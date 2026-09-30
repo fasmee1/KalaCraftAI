@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { DesignStudio } from "@/components/public/design/DesignStudio";
-import { FavoriteButton } from "@/components/public/FavoriteButton";
+import { ProductCard } from "@/components/public/ProductCard";
 import { ChevronIcon, ImageIcon, SparkleIcon, SunIcon } from "@/components/public/icons";
 import { getDesignCatalog, type DesignCatalog } from "@/lib/catalog";
 import { connectDB } from "@/lib/db";
@@ -17,10 +17,6 @@ async function getFeaturedProducts(): Promise<FeaturedProduct[]> {
     price: doc.price ?? null,
     imageUrl: `/api/images/${doc._id}?v=${doc.refImage.publicId.split("/").pop()}`,
   }));
-}
-
-function formatPrice(price: number | null) {
-  return price === null ? "สอบถามราคา" : `฿${price.toLocaleString("th-TH")}`;
 }
 
 export default async function HomePage() {
@@ -167,27 +163,5 @@ function FeaturedProducts({ products }: { products: FeaturedProduct[] }) {
         </ul>
       )}
     </section>
-  );
-}
-
-function ProductCard({ product }: { product: FeaturedProduct }) {
-  return (
-    <article className="overflow-hidden rounded-2xl border border-border bg-white">
-      <div className="relative aspect-[170/118] bg-[linear-gradient(to_bottom_right,#C99A6B,#8B5A3C_50%)]">
-        {/* eslint-disable-next-line @next/next/no-img-element -- รูปมาจาก signed URL ที่หมดอายุ ไม่ผ่าน next/image optimizer */}
-        <img src={product.imageUrl} alt={product.name} loading="lazy" className="size-full object-cover" />
-        <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium leading-[1.5] text-cream">
-          <SparkleIcon size={11} />
-          AI ดีไซน์
-        </span>
-        <FavoriteButton name={product.name} />
-      </div>
-      <div className="flex flex-col gap-0.5 px-3 pb-3 pt-2.5">
-        <h3 className="truncate text-sm font-medium leading-[1.4] text-ink" title={product.name}>
-          {product.name}
-        </h3>
-        <p className="text-sm font-semibold leading-[1.4] text-primary">{formatPrice(product.price)}</p>
-      </div>
-    </article>
   );
 }
