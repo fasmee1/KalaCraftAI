@@ -3,7 +3,6 @@
 import {
   Check,
   ChevronLeft,
-  Copy,
   Download,
   Info,
   Maximize2,
@@ -204,15 +203,9 @@ export function DesignResultView() {
             <span className="text-sm text-ink-muted">{timeAgo(design.createdAt, now)}</span>
           </div>
 
-          <div className="flex items-center justify-between rounded-2xl border border-border bg-white px-4 py-3">
-            <span className="text-sm text-ink-muted">รหัสดีไซน์</span>
-            <span className="font-mono text-lg font-bold tracking-wider text-primary">{design.designCode}</span>
-          </div>
-
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <Action icon={<Share2 size={19} />} label="แชร์" onClick={share} />
             <Action icon={<Pencil size={18} />} label="แก้ไขข้อมูล" onClick={editSelection} />
-            <Action icon={<Copy size={18} />} label="คัดลอกรหัส" onClick={() => copyCode()} />
             <Action icon={<MessageCircle size={19} />} label="ส่งให้เพจ" onClick={sendToPage} disabled={!FB_PAGE} />
           </div>
 
