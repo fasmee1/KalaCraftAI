@@ -1,0 +1,32 @@
+import { Schema, model, models, type InferSchemaType, type Model } from "mongoose";
+
+// ประวัติการสร้างดีไซน์ — เก็บเฉพาะ metadata ไม่เก็บรูปผลลัพธ์
+const GenerationSchema = new Schema(
+  {
+    designCode: { type: String, required: true, unique: true },
+    product: { type: Schema.Types.ObjectId, ref: "Product", required: true, index: true },
+    options: [{ type: Schema.Types.ObjectId, ref: "Option" }],
+    note: { type: String, default: "" },
+    aspectRatio: { type: String, required: true },
+    finalPrompt: { type: String, required: true },
+    provider: { type: String, required: true },
+    model: { type: String, default: null },
+    // pending = กำลังสร้าง (นับโควตา), failed = ไม่นับโควตาลูกค้า
+    status: { type: String, required: true, enum: ["pending", "success", "failed"], default: "pending" },
+    costUsd: { type: Number, default: 0 },
+    durationMs: { type: Number, default: null },
+    error: { type: String, default: null },
+    // SHA-256(IP + salt) — ห้ามเก็บ IP ดิบ
+    ipHash: { type: String, required: true },
+    sentToPageAt: { type: Date, default: null },
+  },
+  { timestamps: true },
+);
+
+GenerationSchema.index({ ipHash: 1, createdAt: -1 });
+GenerationSchema.index({ createdAt: -1, status: 1 });
+
+export type GenerationDoc = InferSchemaType<typeof GenerationSchema>;
+
+export const Generation: Model<GenerationDoc> =
+  models.Generation || model<GenerationDoc>("Generation", GenerationSchema);

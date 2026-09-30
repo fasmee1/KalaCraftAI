@@ -1,0 +1,119 @@
+import { connectDB } from "@/lib/db";
+import { generateDesignCode } from "@/lib/designCode";
+import { editReferenceImage, estimateCostUsd, getAiProvider } from "@/lib/imageAi";
+import { OPTION_TYPES, type OptionType } from "@/lib/optionTypes";
+import { buildPrompt, sanitizeNote } from "@/lib/prompt";
+import { checkGenerateLimits, getClientIp, hashIp } from "@/lib/rateLimit";
+import { verifyTurnstile } from "@/lib/turnstile";
+import { generateSchema } from "@/lib/validators";
+import { Category } from "@/models/Category";
+import { Generation } from "@/models/Generation";
+import { Option } from "@/models/Option";
+import { Product } from "@/models/Product";
+
+// รอ AI ได้นานสุด 60 วินาที
+export const maxDuration = 60;
+
+const error = (message: string, status: number) => Response.json({ error: message }, { status });
+
+export async function POST(request: Request) {
+  // 1. validate
+  const parsed = generateSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return error("ข้อมูลไม่ถูกต้อง กรุณาเลือกใหม่อีกครั้ง", 400);
+  const { productId, aspectRatio, note, turnstileToken } = parsed.data;
+  const optionIds = [...new Set(parsed.data.optionIds)];
+
+  // 2. captcha
+  const ip = getClientIp(request.headers);
+  if (!(await verifyTurnstile(turnstileToken, ip))) {
+    return error("ยืนยันตัวตนไม่สำเร็จ กรุณาลองใหม่", 403);
+  }
+
+  await connectDB();
+
+  // 3. rate limit ต่อ IP + งบรายวันทั้งระบบ
+  const ipHash = hashIp(ip);
+  const provider = getAiProvider();
+  const costUsd = estimateCostUsd(provider);
+  const limit = await checkGenerateLimits(ipHash, costUsd);
+  if (!limit.ok) {
+    return error(
+      limit.reason === "ip"
+        ? "วันนี้คุณสร้างภาพครบโควตาแล้ว กรุณากลับมาใหม่พรุ่งนี้"
+        : "วันนี้ระบบสร้างภาพครบโควตาแล้ว กรุณากลับมาใหม่พรุ่งนี้",
+      429,
+    );
+  }
+
+  // 4. โหลดสินค้า + ตัวเลือก (ต้อง active ทั้งหมด) — cast id เป็น string กัน NoSQL injection
+  const product = await Product.findOne({ _id: String(productId), active: true })
+    .select("name category refImage basePrompt")
+    .lean();
+  const categoryActive = product && (await Category.exists({ _id: product.category, active: true }));
+  if (!product || !categoryActive) return error("ไม่พบสินค้านี้ หรือสินค้าปิดการใช้งานแล้ว", 404);
+
+  const options = await Option.find({ _id: { $in: optionIds.map(String) }, active: true })
+    .select("type promptText")
+    .lean();
+  if (options.length !== optionIds.length) return error("ตัวเลือกบางรายการไม่พร้อมใช้งาน กรุณาเลือกใหม่", 400);
+  for (const t of OPTION_TYPES) {
+    const count = options.filter((o) => o.type === t.key).length;
+    if (t.required && count === 0) return error(`กรุณาเลือก${t.label}`, 400);
+    if (!t.multiple && count > 1) return error(`เลือก${t.label}ได้เพียง 1 แบบ`, 400);
+  }
+
+  // 5. prompt มาจากข้อมูลของแอดมิน + note ที่ sanitize แล้วเท่านั้น
+  const cleanNote = sanitizeNote(note);
+  const finalPrompt = buildPrompt({
+    productName: product.name,
+    basePrompt: product.basePrompt ?? "",
+    options: options.map((o) => ({ type: o.type as OptionType, promptText: o.promptText })),
+    note: cleanNote,
+  });
+
+  // 6. บันทึกเป็น pending ก่อน (นับโควตาทันที) แล้วค่อยเรียก AI
+  let generation = null;
+  for (let attempt = 0; attempt < 3 && !generation; attempt++) {
+    try {
+      generation = await Generation.create({
+        designCode: generateDesignCode(),
+        product: product._id,
+        options: options.map((o) => o._id),
+        note: cleanNote,
+        aspectRatio,
+        finalPrompt,
+        provider,
+        costUsd,
+        ipHash,
+      });
+    } catch (err) {
+      if ((err as { code?: number }).code !== 11000) throw err; // designCode ซ้ำ → สุ่มใหม่
+    }
+  }
+  if (!generation) return error("ระบบขัดข้อง กรุณาลองใหม่", 500);
+
+  const started = Date.now();
+  try {
+    const result = await editReferenceImage({ publicId: product.refImage.publicId, prompt: finalPrompt, aspectRatio });
+    const durationMs = Date.now() - started;
+    await Generation.updateOne({ _id: generation._id }, { status: "success", model: result.model, durationMs });
+    console.info(
+      `[generate] ${generation.designCode} ok provider=${provider} model=${result.model} ${durationMs}ms ` +
+        `cost≈$${costUsd} tokens=${result.inputTokens}/${result.outputTokens}`,
+    );
+    // 7. คืนรูปให้ client — ไม่เก็บรูปไว้ที่ไหน
+    return Response.json({
+      designCode: generation.designCode,
+      imageBase64: result.imageBase64,
+      mimeType: result.mimeType,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    await Generation.updateOne(
+      { _id: generation._id },
+      { status: "failed", costUsd: 0, durationMs: Date.now() - started, error: message.slice(0, 500) },
+    );
+    console.error(`[generate] ${generation.designCode} failed provider=${provider}: ${message}`);
+    return error("AI สร้างภาพไม่สำเร็จ กรุณาลองเปลี่ยนตัวเลือกหรือลองใหม่อีกครั้ง (ไม่นับโควตา)", 502);
+  }
+}
