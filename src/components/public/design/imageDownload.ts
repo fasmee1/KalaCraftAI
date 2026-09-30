@@ -1,11 +1,12 @@
 "use client";
 
 // บันทึกรูปผลลัพธ์ลงเครื่องให้ได้ในทุกเบราว์เซอร์ — รูปอยู่ในหน้าเว็บเป็น base64 ไม่มี URL บน server
-// ลำดับ: มือถือ → เมนูแชร์ของเครื่อง (มี "บันทึกรูปภาพ" ลงแกลเลอรี)
-//        เดสก์ท็อป → ดาวน์โหลดไฟล์ผ่าน Blob URL
+// ลำดับ: iPhone/iPad → เมนูแชร์ของเครื่อง (มี "บันทึกรูปภาพ" ลง Photos โดยตรง)
+//        Android/เดสก์ท็อป → ดาวน์โหลดไฟล์ผ่าน Blob URL (Android: ลงโฟลเดอร์ Download ซึ่งแกลเลอรีเห็น)
+//        — เมนูแชร์ของ Android ไม่มีปุ่มบันทึกลงแกลเลอรี มีแต่รายชื่อแอป จึงไม่ใช้กับ Android
 //        เบราว์เซอร์ในแอป (Facebook/Messenger/LINE/IG) ที่บล็อกการดาวน์โหลด → ให้กดค้างที่รูปเอง
 
-export type SaveResult = "shared" | "downloaded" | "cancelled" | "manual";
+export type SaveResult = "shared" | "downloaded" | "downloaded-android" | "cancelled" | "manual";
 
 export function base64ToFile(base64: string, mimeType: string, fileName: string): File {
   const bin = atob(base64);
@@ -19,15 +20,20 @@ export function isInAppBrowser(ua = navigator.userAgent): boolean {
   return /FBAN|FBAV|FB_IAB|Messenger|Instagram|Line\/|MicroMessenger|TikTok/i.test(ua);
 }
 
-const isTouchDevice = () => window.matchMedia("(pointer: coarse)").matches;
+/** iPadOS รายงานตัวเองเป็น Macintosh — แยกด้วยจอสัมผัส */
+export function isIOS(ua = navigator.userAgent): boolean {
+  return /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+}
+
+export const isAndroid = (ua = navigator.userAgent) => /Android/i.test(ua);
 
 export async function saveImage(base64: string, mimeType: string, fileName: string): Promise<SaveResult> {
   if (isInAppBrowser()) return "manual";
 
   const file = base64ToFile(base64, mimeType, fileName);
 
-  // มือถือ: เมนูแชร์บันทึกลงแกลเลอรีได้ตรง ๆ (ดาวน์โหลดปกติจะไปอยู่ในแอป Files ซึ่งลูกค้าหาไม่เจอ)
-  if (isTouchDevice() && navigator.canShare?.({ files: [file] })) {
+  // iOS: ดาวน์โหลดปกติจะไปอยู่ในแอป Files ซึ่งลูกค้าหาไม่เจอ — เมนูแชร์มี "บันทึกรูปภาพ" ลง Photos
+  if (isIOS() && navigator.canShare?.({ files: [file] })) {
     try {
       await navigator.share({ files: [file] });
       return "shared";
@@ -50,5 +56,5 @@ export async function saveImage(base64: string, mimeType: string, fileName: stri
     // ให้เวลาเบราว์เซอร์เริ่มดาวน์โหลดก่อนคืนหน่วยความจำ
     setTimeout(() => URL.revokeObjectURL(url), 30_000);
   }
-  return "downloaded";
+  return isAndroid() ? "downloaded-android" : "downloaded";
 }

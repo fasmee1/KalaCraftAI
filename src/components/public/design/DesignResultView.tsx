@@ -118,6 +118,7 @@ export function DesignResultView() {
       const result = await saveImage(design.imageBase64, design.mimeType, fileName);
       if (result === "manual") setExpanded("save");
       else if (result === "downloaded") setToast(`ดาวน์โหลด ${fileName} แล้ว`);
+      else if (result === "downloaded-android") setToast("บันทึกแล้ว · ดูได้ในแกลเลอรี / Google Photos อัลบั้ม Download");
     } catch {
       setExpanded("save");
     } finally {
