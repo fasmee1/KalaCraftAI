@@ -21,6 +21,7 @@ export default async function ProductsPage(props: PageProps<"/products">) {
     categoryId: catalog.categories.find((c) => c.slug === slug)?.id ?? null,
     q: (first(params.q) ?? "").slice(0, 100),
     sort: (SORTS.some((s) => s.value === sortParam) ? sortParam : "recommended") as SortValue,
+    productId: first(params.product) ?? null,
   };
 
   return <ProductsBrowser catalog={catalog} products={products} initial={initial} />;

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { DesignStudio, type DesignPreselect } from "@/components/public/design/DesignStudio";
 import { ProductCard } from "@/components/public/ProductCard";
+import { ProductModal } from "@/components/public/ProductModal";
+import { useSmoothClose } from "@/components/public/useSmoothClose";
 import type { DesignCatalog, ListingProduct } from "@/lib/catalog";
 import { SORTS, type SortValue } from "./sorts";
 
@@ -36,7 +38,7 @@ export function ProductsBrowser({
 }: {
   catalog: DesignCatalog;
   products: ListingProduct[];
-  initial: { categoryId: string | null; q: string; sort: SortValue };
+  initial: { categoryId: string | null; q: string; sort: SortValue; productId: string | null };
 }) {
   const [categoryId, setCategoryId] = useState<string | null>(initial.categoryId);
   const [query, setQuery] = useState(initial.q);
@@ -44,6 +46,8 @@ export function ProductsBrowser({
   const [price, setPrice] = useState<PriceValue>("all");
   const [filterOpen, setFilterOpen] = useState(false);
   const [preselect, setPreselect] = useState<DesignPreselect | null>(null);
+  // popup สินค้า — เปิดจากลิงก์ที่แชร์มา (?product=<id>) ได้ด้วย
+  const [viewing, setViewing] = useState<ListingProduct | null>(() => products.find((p) => p.id === initial.productId) ?? null);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -60,9 +64,10 @@ export function ProductsBrowser({
     if (slug) params.set("category", slug);
     if (query.trim()) params.set("q", query.trim());
     if (sort !== "recommended") params.set("sort", sort);
+    if (viewing) params.set("product", viewing.id);
     const qs = params.toString();
     window.history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname);
-  }, [catalog.categories, categoryId, query, sort]);
+  }, [catalog.categories, categoryId, query, sort, viewing]);
 
   const resetAll = () => {
     setCategoryId(null);
@@ -169,7 +174,7 @@ export function ProductsBrowser({
               <ProductCard
                 product={p}
                 showAiBadge={p.designCount > 0}
-                onSelect={() => setPreselect({ categoryId: p.categoryId, productId: p.id, nonce: Date.now() })}
+                onSelect={() => setViewing(p)}
               />
             </li>
           ))}
@@ -182,6 +187,18 @@ export function ProductsBrowser({
         preselect={preselect}
         className="fixed bottom-6 left-1/2 z-40 flex h-[52px] -translate-x-1/2 items-center whitespace-nowrap justify-center gap-2 rounded-full bg-accent px-6 text-base font-semibold text-ink shadow-[0_8px_24px_rgba(217,164,65,0.45)] transition hover:brightness-[1.04] active:scale-[0.98] lg:bottom-8 lg:h-14 lg:px-8"
       />
+
+      {viewing && (
+        <ProductModal
+          product={viewing}
+          categoryName={catalog.categories.find((c) => c.id === viewing.categoryId)?.name}
+          onClose={() => setViewing(null)}
+          onDesign={(p) => {
+            setViewing(null);
+            setPreselect({ categoryId: p.categoryId, productId: p.id, nonce: Date.now() });
+          }}
+        />
+      )}
 
       {filterOpen && (
         <PriceFilterSheet
@@ -230,9 +247,10 @@ function PriceFilterSheet({
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState<PriceValue>(value);
+  const { closing, requestClose } = useSmoothClose(onClose);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && requestClose();
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
@@ -240,21 +258,27 @@ function PriceFilterSheet({
       document.body.style.overflow = overflow;
       window.removeEventListener("keydown", onKey);
     };
-  }, [onClose]);
+  }, [requestClose]);
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/45 sm:items-center sm:p-6"
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+      data-closing={closing || undefined}
+      className="overlay-anim fixed inset-0 z-50 flex items-end justify-center bg-ink/45 sm:items-center sm:p-6"
+      onMouseDown={(e) => e.target === e.currentTarget && requestClose()}
     >
-      <div role="dialog" aria-modal="true" aria-labelledby="price-filter-title" className="w-full max-w-md rounded-t-3xl bg-cream p-5 pb-6 sm:rounded-3xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="price-filter-title"
+        data-closing={closing || undefined}
+        className="panel-anim w-full max-w-md rounded-t-3xl bg-cream p-5 pb-6 sm:rounded-3xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 id="price-filter-title" className="text-lg font-bold text-primary">
             ช่วงราคา
           </h2>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => requestClose()}
             aria-label="ปิด"
             className="flex size-9 items-center justify-center rounded-full bg-beige text-ink hover:bg-border/60"
           >
@@ -287,14 +311,14 @@ function PriceFilterSheet({
         <div className="mt-5 flex gap-2.5">
           <button
             type="button"
-            onClick={() => onApply("all")}
+            onClick={() => requestClose(() => onApply("all"))}
             className="h-12 rounded-[14px] border border-border px-5 text-sm font-semibold text-ink hover:border-primary/50"
           >
             ล้าง
           </button>
           <button
             type="button"
-            onClick={() => onApply(draft)}
+            onClick={() => requestClose(() => onApply(draft))}
             className="h-12 flex-1 rounded-[14px] bg-primary text-sm font-semibold text-cream hover:bg-primary-hover"
           >
             ดูผลลัพธ์ ({count(draft)})

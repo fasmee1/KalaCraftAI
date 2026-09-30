@@ -27,10 +27,18 @@ export function isIOS(ua = navigator.userAgent): boolean {
 
 export const isAndroid = (ua = navigator.userAgent) => /Android/i.test(ua);
 
-export async function saveImage(base64: string, mimeType: string, fileName: string): Promise<SaveResult> {
-  if (isInAppBrowser()) return "manual";
+export function saveImage(base64: string, mimeType: string, fileName: string): Promise<SaveResult> {
+  if (isInAppBrowser()) return Promise.resolve("manual");
+  return saveFile(base64ToFile(base64, mimeType, fileName));
+}
 
-  const file = base64ToFile(base64, mimeType, fileName);
+/**
+ * บันทึกไฟล์ที่เตรียมไว้แล้ว — ต้องเรียกทันทีใน handler ของการกด (ห้าม await งานอื่นก่อน)
+ * เพราะ iOS อนุญาตให้เปิดเมนูแชร์เฉพาะตอนที่ยังอยู่ในจังหวะที่ผู้ใช้เพิ่งกด
+ */
+export async function saveFile(file: File): Promise<SaveResult> {
+  if (isInAppBrowser()) return "manual";
+  const fileName = file.name;
 
   // iOS: ดาวน์โหลดปกติจะไปอยู่ในแอป Files ซึ่งลูกค้าหาไม่เจอ — เมนูแชร์มี "บันทึกรูปภาพ" ลง Photos
   if (isIOS() && navigator.canShare?.({ files: [file] })) {

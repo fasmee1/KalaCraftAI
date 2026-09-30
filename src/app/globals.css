@@ -102,3 +102,65 @@ dialog.modal[data-closing]::backdrop {
   --heat-6: #7c3f1b;
   --good-ink: #3f7a33;
 }
+
+/* ---------- Popup ฝั่งลูกค้า (เปิด/ปิดแบบนุ่ม) ----------
+   มือถือ: แผ่นเลื่อนขึ้นจากล่าง · จอ ≥ sm: ขยาย+เฟดกลางจอ
+   ระยะเวลาปิดต้องตรงกับ EXIT_MS ใน src/components/public/useSmoothClose.ts */
+html {
+  /* จองที่แถบเลื่อนไว้ — ตอน popup ล็อกการเลื่อน หน้าเว็บจะไม่กระตุกไปด้านข้าง */
+  scrollbar-gutter: stable;
+}
+@keyframes sheet-in {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+@keyframes sheet-out {
+  from { transform: none; }
+  to { transform: translateY(100%); }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pop-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(10px) scale(0.97); }
+}
+@keyframes zoom-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: none; }
+}
+.overlay-anim {
+  animation: fade-in 240ms ease-out;
+}
+.overlay-anim[data-closing] {
+  animation: fade-out 200ms ease-in forwards;
+}
+.panel-anim {
+  animation: sheet-in 380ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.panel-anim[data-closing] {
+  animation: sheet-out 200ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+@media (min-width: 640px) {
+  .panel-anim {
+    animation: pop-in 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .panel-anim[data-closing] {
+    animation: pop-out 200ms ease-in forwards;
+  }
+}
+.zoom-anim {
+  animation: zoom-in 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.fade-anim {
+  animation: fade-in 220ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .overlay-anim,
+  .panel-anim,
+  .zoom-anim,
+  .fade-anim {
+    animation-duration: 1ms !important;
+  }
+}

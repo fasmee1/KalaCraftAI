@@ -21,6 +21,7 @@ import { requestDesign } from "./designApi";
 import { ErrorNote, GeneratingOverlay } from "./DesignStudio";
 import { loadDesign, saveDesign, saveEditSelection, type StoredDesign } from "./designStore";
 import { base64ToFile, saveImage } from "./imageDownload";
+import { useSmoothClose } from "../useSmoothClose";
 import { Turnstile } from "./Turnstile";
 
 const FB_PAGE = process.env.NEXT_PUBLIC_FB_PAGE;
@@ -51,6 +52,7 @@ export function DesignResultView() {
   // "view" = ดูภาพเต็มจอ, "save" = ภาพเต็มจอพร้อมวิธีบันทึกเอง (เบราว์เซอร์ที่ดาวน์โหลดไม่ได้)
   const [expanded, setExpanded] = useState<false | "view" | "save">(false);
   const [saving, setSaving] = useState(false);
+  const { closing: lightboxClosing, requestClose: closeLightbox } = useSmoothClose(() => setExpanded(false));
   const [toast, setToast] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [turnstileReset, setTurnstileReset] = useState(0);
@@ -72,10 +74,10 @@ export function DesignResultView() {
 
   useEffect(() => {
     if (!expanded) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setExpanded(false);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && closeLightbox();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [expanded]);
+  }, [expanded, closeLightbox]);
 
   if (design === undefined) return <div className="min-h-dvh bg-cream" />;
   if (design === null) return <EmptyState />;
@@ -295,8 +297,9 @@ export function DesignResultView() {
           role="dialog"
           aria-modal="true"
           aria-label={expanded === "save" ? "บันทึกรูปภาพ" : "ภาพเต็มจอ"}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-ink/90 p-4 pt-16"
-          onClick={() => setExpanded(false)}
+          data-closing={lightboxClosing || undefined}
+          className="overlay-anim fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-ink/90 p-4 pt-16"
+          onClick={() => closeLightbox()}
         >
           {expanded === "save" && (
             <p className="max-w-sm rounded-2xl bg-white px-4 py-3 text-center text-sm leading-relaxed text-ink">
@@ -310,11 +313,11 @@ export function DesignResultView() {
             src={src}
             alt={`ดีไซน์ ${design.designCode}`}
             onClick={(e) => e.stopPropagation()}
-            className="min-h-0 max-w-full flex-1 rounded-2xl object-contain"
+            className="zoom-anim min-h-0 max-w-full flex-1 rounded-2xl object-contain"
           />
           <button
             type="button"
-            onClick={() => setExpanded(false)}
+            onClick={() => closeLightbox()}
             aria-label="ปิด"
             className="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full bg-white/90 text-ink"
           >

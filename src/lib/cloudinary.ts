@@ -93,19 +93,23 @@ export function signedImageUrl(publicId: string, format: string, expiresInSecond
  * ดึงรูปต้นแบบจาก Cloudinary ของเราเอง (ย่อด้านยาวไม่เกิน maxSide) เพื่อส่งให้ AI แก้
  * URL สร้างจาก publicId ใน DB เท่านั้น ไม่รับ URL จากผู้ใช้ (กัน SSRF)
  */
-export async function fetchReferenceImage(publicId: string, maxSide: number): Promise<{ data: Buffer; mimeType: string }> {
+export async function fetchReferenceImage(
+  publicId: string,
+  maxSide: number,
+  format: "png" | "jpg" = "png",
+): Promise<{ data: Buffer; mimeType: string }> {
   ensureConfigured();
   const url = cloudinary.url(publicId, {
     type: DELIVERY_TYPE,
     resource_type: "image",
     sign_url: true,
     secure: true,
-    format: "png",
-    transformation: [{ width: maxSide, height: maxSide, crop: "limit" }],
+    format,
+    transformation: [{ width: maxSide, height: maxSide, crop: "limit", ...(format === "jpg" ? { quality: "auto:good" } : {}) }],
   });
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error(`Cloudinary fetch failed (${res.status})`);
-  return { data: Buffer.from(await res.arrayBuffer()), mimeType: "image/png" };
+  return { data: Buffer.from(await res.arrayBuffer()), mimeType: format === "jpg" ? "image/jpeg" : "image/png" };
 }
 
 export async function deleteImage(publicId: string): Promise<void> {

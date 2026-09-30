@@ -131,8 +131,15 @@ export function DesignForm({
         </button>
       </div>
 
-      {optionalOpen && (
-        <>
+      {/* พับ/กางแบบนุ่ม: grid-rows 0fr↔1fr — ตอนพับใช้ inert ให้กด/โฟกัสข้างในไม่ได้ และดึง gap ของ flex กลับ */}
+      <div
+        inert={!optionalOpen}
+        className={`grid transition-[grid-template-rows,opacity,margin] duration-300 ease-out motion-reduce:transition-none ${
+          optionalOpen ? "grid-rows-[1fr] opacity-100" : "-mt-6 grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="flex flex-col gap-6">
           <Field n={5} title="ลวดลาย/การตกแต่ง">
             <div className="grid grid-cols-3 gap-2.5">
               {optionsOf("pattern").map((o) => {
@@ -173,8 +180,9 @@ export function DesignForm({
           />
           <OptionChips n={8} type="background" title="ฉากหลัง" options={optionsOf("background")} value={value} onToggle={toggleOption} />
           <OptionChips n={9} type="camera" title="มุมกล้อง" options={optionsOf("camera")} value={value} onToggle={toggleOption} />
-        </>
-      )}
+          </div>
+        </div>
+      </div>
 
       <div className="border-t border-border pt-5">
         <GroupTitle title="ตั้งค่าภาพ" />

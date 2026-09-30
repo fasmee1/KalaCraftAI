@@ -9,6 +9,7 @@ import { requestDesign } from "./designApi";
 import { DesignForm, emptySelection, type DesignSelection } from "./DesignForm";
 import { saveDesign, takeEditSelection } from "./designStore";
 import { Turnstile } from "./Turnstile";
+import { useSmoothClose } from "../useSmoothClose";
 
 export const RESULT_PATH = "/design/result";
 
@@ -42,10 +43,13 @@ export function DesignStudio({
   catalog,
   className,
   preselect,
+  hideTrigger = false,
 }: {
   catalog: DesignCatalog;
   className?: string;
   preselect?: DesignPreselect | null;
+  /** ไม่แสดงปุ่มเปิด — ใช้เมื่อเปิด popup จาก preselect อย่างเดียว (เช่น การ์ดสินค้าหน้าแรก) */
+  hideTrigger?: boolean;
 }) {
   const router = useRouter();
   const titleId = useId();
@@ -79,11 +83,15 @@ export function DesignStudio({
     setOpen(true);
   }, [preselect]);
 
-  const close = useCallback(() => {
-    if (loading) return;
+  const { closing, requestClose } = useSmoothClose(() => {
     setOpen(false);
     setError(null);
-  }, [loading]);
+  });
+
+  const close = useCallback(() => {
+    if (loading || closing) return;
+    requestClose();
+  }, [loading, closing, requestClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -124,21 +132,25 @@ export function DesignStudio({
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className={className}>
-        <Sparkles size={20} />
-        สร้างดีไซน์ด้วย AI
-      </button>
+      {!hideTrigger && (
+        <button type="button" onClick={() => setOpen(true)} className={className}>
+          <Sparkles size={20} />
+          สร้างดีไซน์ด้วย AI
+        </button>
+      )}
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-ink/45 sm:items-center sm:p-6"
+          data-closing={closing || undefined}
+          className="overlay-anim fixed inset-0 z-50 flex items-end justify-center bg-ink/45 sm:items-center sm:p-6"
           onMouseDown={(e) => e.target === e.currentTarget && close()}
         >
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            className="flex h-[100dvh] w-full max-w-[440px] flex-col overflow-hidden bg-cream shadow-2xl sm:h-[min(92dvh,900px)] sm:rounded-3xl lg:max-w-[520px]"
+            data-closing={closing || undefined}
+            className="panel-anim flex h-[100dvh] w-full max-w-[440px] flex-col overflow-hidden bg-cream shadow-2xl sm:h-[min(92dvh,900px)] sm:rounded-3xl lg:max-w-[520px]"
           >
             <header className="border-b border-border bg-cream px-5 pb-4 pt-5">
               <div className="flex items-center gap-3">
@@ -237,7 +249,7 @@ export function DesignStudio({
 
 export function GeneratingOverlay() {
   return (
-    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-cream/90 px-6 text-center backdrop-blur-sm">
+    <div className="fade-anim absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-cream/90 px-6 text-center backdrop-blur-sm">
       <LoaderCircle size={40} className="animate-spin text-primary" />
       <p className="text-base font-semibold text-primary">AI กำลังสร้างภาพ…</p>
       <p className="text-xs text-ink-muted">ใช้เวลาประมาณ 10–30 วินาที กรุณาอย่าปิดหน้านี้</p>

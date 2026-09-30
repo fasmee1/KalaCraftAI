@@ -1,33 +1,22 @@
 import Link from "next/link";
 import { DesignStudio } from "@/components/public/design/DesignStudio";
-import { ProductCard } from "@/components/public/ProductCard";
+import { FeaturedGrid } from "@/components/public/FeaturedGrid";
 import { ChevronIcon, ImageIcon, SparkleIcon, SunIcon } from "@/components/public/icons";
-import { getDesignCatalog, type DesignCatalog } from "@/lib/catalog";
-import { connectDB } from "@/lib/db";
-import { Product } from "@/models/Product";
+import { getProductListing, type DesignCatalog, type ListingProduct } from "@/lib/catalog";
 
-type FeaturedProduct = { id: string; name: string; price: number | null; imageUrl: string };
-
-async function getFeaturedProducts(): Promise<FeaturedProduct[]> {
-  await connectDB();
-  const docs = await Product.find({ active: true }).sort({ sortOrder: 1, createdAt: -1 }).limit(8).lean();
-  return docs.map((doc) => ({
-    id: String(doc._id),
-    name: doc.name,
-    price: doc.price ?? null,
-    imageUrl: `/api/images/${doc._id}?v=${doc.refImage.publicId.split("/").pop()}`,
-  }));
-}
+const FEATURED_COUNT = 8;
 
 export default async function HomePage() {
-  const [products, catalog] = await Promise.all([getFeaturedProducts(), getDesignCatalog()]);
+  // catalog เรียงตามลำดับที่แอดมินตั้ง (sortOrder) แล้ว — 8 ชิ้นแรกคือสินค้าแนะนำ
+  const { catalog, products } = await getProductListing();
+  const featured = products.slice(0, FEATURED_COUNT);
 
   return (
     <div className="mx-auto w-full max-w-[1200px] pb-10 lg:pb-20">
       <Header />
       <main className="px-6 lg:px-10">
         <Hero catalog={catalog} />
-        <FeaturedProducts products={products} />
+        <FeaturedProducts catalog={catalog} products={featured} />
       </main>
     </div>
   );
@@ -138,7 +127,7 @@ function Steps() {
   );
 }
 
-function FeaturedProducts({ products }: { products: FeaturedProduct[] }) {
+function FeaturedProducts({ catalog, products }: { catalog: DesignCatalog; products: ListingProduct[] }) {
   return (
     <section className="mt-8 lg:mt-14">
       <div className="flex h-[30px] items-center justify-between">
@@ -154,13 +143,7 @@ function FeaturedProducts({ products }: { products: FeaturedProduct[] }) {
           ยังไม่มีสินค้าแนะนำในขณะนี้
         </p>
       ) : (
-        <ul className="mt-[17px] grid grid-cols-2 gap-[13px] md:grid-cols-3 lg:mt-5 lg:grid-cols-4 lg:gap-6">
-          {products.map((p) => (
-            <li key={p.id}>
-              <ProductCard product={p} />
-            </li>
-          ))}
-        </ul>
+        <FeaturedGrid catalog={catalog} products={products} />
       )}
     </section>
   );

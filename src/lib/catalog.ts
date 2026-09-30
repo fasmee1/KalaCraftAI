@@ -49,6 +49,7 @@ export async function getDesignCatalog(): Promise<DesignCatalog> {
 
 // หน้า "สินค้าทั้งหมด" — ข้อมูลเพิ่มจาก catalog: ราคา ลำดับ วันที่ และจำนวนดีไซน์ที่ลูกค้าเคยสร้าง
 export type ListingProduct = CatalogProduct & {
+  description: string;
   price: number | null;
   sortOrder: number;
   createdAt: string;
@@ -59,7 +60,7 @@ export async function getProductListing(): Promise<{ catalog: DesignCatalog; pro
   const catalog = await getDesignCatalog();
   const ids = catalog.products.map((p) => p.id);
   const [docs, counts] = await Promise.all([
-    Product.find({ _id: { $in: ids } }).select("price sortOrder createdAt").lean(),
+    Product.find({ _id: { $in: ids } }).select("description price sortOrder createdAt").lean(),
     Generation.aggregate<{ _id: unknown; n: number }>([
       { $match: { status: "success" } },
       { $group: { _id: "$product", n: { $sum: 1 } } },
@@ -73,6 +74,7 @@ export async function getProductListing(): Promise<{ catalog: DesignCatalog; pro
       const d = meta.get(p.id);
       return {
         ...p,
+        description: d?.description ?? "",
         price: d?.price ?? null,
         sortOrder: d?.sortOrder ?? 0,
         createdAt: d ? new Date(d.createdAt).toISOString() : new Date(0).toISOString(),
