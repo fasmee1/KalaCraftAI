@@ -2,6 +2,7 @@
 
 import { Check, ChevronUp, Info, RectangleHorizontal, RectangleVertical, Square } from "lucide-react";
 import type { ReactNode } from "react";
+import { SkeletonImage } from "@/components/SkeletonImage";
 import type { CatalogOption, DesignCatalog } from "@/lib/catalog";
 import { ASPECT_RATIOS, NOTE_MAX_LENGTH, OPTION_TYPES, type OptionType } from "@/lib/optionTypes";
 import { PatternPreview } from "./PatternPreview";
@@ -98,8 +99,9 @@ export function DesignForm({
                     selected ? "border-secondary border-[1.5px] bg-secondary/5" : "border-border bg-surface hover:border-primary/40"
                   }`}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element -- signed URL หมดอายุ ไม่ผ่าน optimizer */}
-                  <img src={p.imageUrl} alt="" className="size-14 shrink-0 rounded-xl bg-beige object-cover" loading="lazy" />
+                  <span className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-beige">
+                    <SkeletonImage src={p.imageUrl} alt="" className="size-full object-cover" loading="lazy" />
+                  </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-ink">{p.name}</span>
                     {selected && (

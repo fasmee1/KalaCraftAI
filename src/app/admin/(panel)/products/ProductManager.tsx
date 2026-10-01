@@ -20,6 +20,7 @@ import {
   useToast,
   type FieldErrors,
 } from "@/components/admin/ui";
+import { SkeletonImage } from "@/components/SkeletonImage";
 import type { CategoryDTO } from "@/lib/category";
 import type { ProductDTO } from "@/lib/product";
 
@@ -151,8 +152,7 @@ export function ProductManager({ initial, categories }: { initial: ProductDTO[];
           {filtered.map((p) => (
             <li key={p.id} className="flex flex-col overflow-hidden rounded-2xl border border-border bg-surface">
               <div className="relative aspect-[4/3] bg-beige">
-                {/* eslint-disable-next-line @next/next/no-img-element -- รูปมาจาก signed URL ที่หมดอายุ ไม่ผ่าน next/image optimizer */}
-                <img
+                <SkeletonImage
                   src={p.imageUrl}
                   alt={p.name}
                   loading="lazy"
@@ -446,8 +446,7 @@ function ImagePicker({
       >
         {shown ? (
           <>
-            {/* eslint-disable-next-line @next/next/no-img-element -- blob preview / signed URL */}
-            <img src={shown} alt="รูปต้นแบบ" className="size-full object-cover" />
+            <SkeletonImage src={shown} alt="รูปต้นแบบ" className="size-full object-cover" />
             <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 bg-scrim/60 py-2 text-xs font-medium text-cream opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
               <RefreshCw className="size-3.5" aria-hidden />
               เปลี่ยนรูป

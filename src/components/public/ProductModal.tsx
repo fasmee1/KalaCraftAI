@@ -2,6 +2,7 @@
 
 import { Check, Download, LoaderCircle, Share2, Sparkles, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
+import { SkeletonImage } from "@/components/SkeletonImage";
 import type { ListingProduct } from "@/lib/catalog";
 import { isInAppBrowser, saveFile } from "./design/imageDownload";
 import { formatPrice } from "./ProductCard";
@@ -120,8 +121,7 @@ export function ProductModal({
 
         {/* รูปสินค้า */}
         <div className="relative bg-beige md:h-full">
-          {/* eslint-disable-next-line @next/next/no-img-element -- signed URL หมดอายุ ไม่ผ่าน next/image optimizer */}
-          <img src={product.imageUrl} alt={product.name} className="aspect-[4/3] w-full object-cover md:aspect-auto md:h-full" />
+          <SkeletonImage src={product.imageUrl} alt={product.name} className="aspect-[4/3] w-full object-cover md:aspect-auto md:h-full" />
           {manual && (
             <p className="fade-anim absolute inset-x-4 bottom-4 rounded-2xl bg-surface/95 px-4 py-3 text-center text-sm leading-relaxed text-ink shadow">
               <span className="font-semibold text-primary">กดค้างที่รูป</span> แล้วเลือก “บันทึกรูปภาพ”

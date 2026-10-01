@@ -1,5 +1,6 @@
 "use client";
 
+import { SkeletonImage } from "@/components/SkeletonImage";
 import { FavoriteButton } from "./FavoriteButton";
 import { SparkleIcon } from "./icons";
 
@@ -25,8 +26,7 @@ export function ProductCard({
   return (
     <article className="group relative overflow-hidden rounded-2xl border border-border bg-surface transition hover:shadow-[0_8px_24px_rgba(107,66,38,0.12)]">
       <div className="relative aspect-[170/118] overflow-hidden bg-[linear-gradient(to_bottom_right,#C99A6B,#8B5A3C_50%)]">
-        {/* eslint-disable-next-line @next/next/no-img-element -- รูปมาจาก signed URL ที่หมดอายุ ไม่ผ่าน next/image optimizer */}
-        <img
+        <SkeletonImage
           src={product.imageUrl}
           alt={product.name}
           loading="lazy"

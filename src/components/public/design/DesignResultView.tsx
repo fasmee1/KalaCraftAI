@@ -23,6 +23,7 @@ import { loadDesign, saveDesign, saveEditSelection, type StoredDesign } from "./
 import { base64ToFile, saveImage } from "./imageDownload";
 import { useSmoothClose } from "../useSmoothClose";
 import { Turnstile } from "./Turnstile";
+import { SkeletonImage } from "@/components/SkeletonImage";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const FB_PAGE = process.env.NEXT_PUBLIC_FB_PAGE;
@@ -181,8 +182,7 @@ export function DesignResultView() {
           <div
             className={`relative mx-auto w-full overflow-hidden rounded-3xl bg-[linear-gradient(135deg,#c99a6b,#8b5a3c)] shadow-[0_12px_32px_rgba(107,66,38,0.18)] ${ASPECT_CLASS[design.aspectRatio] ?? "aspect-square"}`}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element -- รูป base64 จาก AI ไม่มี URL ให้ optimizer */}
-            <img src={src} alt={`ดีไซน์ ${design.designCode}`} className="size-full object-cover" />
+            <SkeletonImage src={src} alt={`ดีไซน์ ${design.designCode}`} className="size-full object-cover" />
             <button
               type="button"
               onClick={() => setExpanded("view")}
@@ -215,8 +215,9 @@ export function DesignResultView() {
           <div className="rounded-2xl border border-border bg-surface p-4">
             <div className="flex gap-3">
               <div className="flex shrink-0 flex-col items-center gap-1">
-                {/* eslint-disable-next-line @next/next/no-img-element -- signed URL หมดอายุ ไม่ผ่าน optimizer */}
-                <img src={design.product.imageUrl} alt="" className="size-[52px] rounded-xl bg-beige object-cover" />
+                <span className="relative size-[52px] overflow-hidden rounded-xl bg-beige">
+                  <SkeletonImage src={design.product.imageUrl} alt="" className="size-full object-cover" />
+                </span>
                 <span className="text-[11px] text-ink-muted">ต้นแบบ</span>
               </div>
               <div className="min-w-0 flex-1">

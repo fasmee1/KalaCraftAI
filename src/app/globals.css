@@ -215,3 +215,37 @@ html {
     animation-duration: 1ms !important;
   }
 }
+
+/* ---------- Skeleton (รูปที่กำลังโหลด — ใช้กับ SkeletonImage) ----------
+   แถบแสงวิ่งซ้าย→ขวา สีมาจาก token จึงเปลี่ยนตามธีมเอง */
+@keyframes skeleton-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+.skeleton {
+  background-color: var(--color-beige);
+  background-image: linear-gradient(
+    100deg,
+    transparent 40%,
+    color-mix(in srgb, var(--color-surface) 60%, transparent) 50%,
+    transparent 60%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s linear infinite;
+}
+/* รูปโหลดเสร็จ → เฟดเข้าสั้น ๆ ไปยัง opacity ของรูปเอง (ไม่กำหนดปลายทาง — รูปที่ตั้ง opacity-50 ไว้จะไม่กระตุก) */
+@keyframes skeleton-reveal {
+  from { opacity: 0; }
+}
+.skeleton-reveal {
+  animation: skeleton-reveal 200ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    background-image: none;
+  }
+  .skeleton-reveal {
+    animation: none;
+  }
+}
