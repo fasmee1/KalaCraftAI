@@ -95,7 +95,7 @@ export function DesignForm({
                   aria-checked={selected}
                   onClick={() => onChange({ ...value, productId: p.id })}
                   className={`flex items-center gap-3 rounded-2xl border p-3 text-left transition ${
-                    selected ? "border-secondary border-[1.5px] bg-secondary/5" : "border-border bg-white hover:border-primary/40"
+                    selected ? "border-secondary border-[1.5px] bg-secondary/5" : "border-border bg-surface hover:border-primary/40"
                   }`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element -- signed URL หมดอายุ ไม่ผ่าน optimizer */}
@@ -151,7 +151,7 @@ export function DesignForm({
                     aria-pressed={selected}
                     onClick={() => toggleOption("pattern", o.id)}
                     className={`relative flex flex-col gap-1.5 rounded-2xl border p-1.5 pb-2 transition ${
-                      selected ? "border-[1.5px] border-primary bg-beige" : "border-border bg-white hover:border-primary/40"
+                      selected ? "border-[1.5px] border-primary bg-beige" : "border-border bg-surface hover:border-primary/40"
                     }`}
                   >
                     <span className="block aspect-[4/3] w-full">
@@ -159,7 +159,7 @@ export function DesignForm({
                     </span>
                     <span className="text-center text-[13px] font-medium text-ink">{o.label}</span>
                     {selected && (
-                      <span className="absolute right-2.5 top-2.5 flex size-6 items-center justify-center rounded-full border-2 border-white bg-primary text-cream">
+                      <span className="absolute right-2.5 top-2.5 flex size-6 items-center justify-center rounded-full border-2 border-surface bg-primary text-cream">
                         <Check size={13} strokeWidth={3} />
                       </span>
                     )}
@@ -201,7 +201,7 @@ export function DesignForm({
                 aria-checked={selected}
                 onClick={() => onChange({ ...value, aspectRatio: a.value })}
                 className={`flex flex-col items-center gap-1 rounded-2xl border px-2 py-3.5 transition ${
-                  selected ? "border-[1.5px] border-primary bg-beige" : "border-border bg-white hover:border-primary/40"
+                  selected ? "border-[1.5px] border-primary bg-beige" : "border-border bg-surface hover:border-primary/40"
                 }`}
               >
                 <Icon size={26} strokeWidth={1.5} className={selected ? "text-primary" : "text-ink"} />
@@ -222,7 +222,7 @@ export function DesignForm({
       </div>
 
       <Field n={11} title="บอก AI เพิ่มเติม">
-        <div className="rounded-2xl border border-border bg-white px-4 pb-2 pt-3 focus-within:border-primary">
+        <div className="rounded-2xl border border-border bg-surface px-4 pb-2 pt-3 focus-within:border-primary">
           <textarea
             value={value.note}
             maxLength={NOTE_MAX_LENGTH}
@@ -346,13 +346,13 @@ function Chip({
       aria-pressed={selected}
       onClick={onClick}
       className={`inline-flex h-10 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition active:scale-[0.97] ${
-        selected ? "border-primary bg-primary text-cream" : "border-border bg-white text-ink hover:border-primary/50"
+        selected ? "border-primary bg-primary text-cream" : "border-border bg-surface text-ink hover:border-primary/50"
       }`}
     >
       {swatch ? (
         <span
           aria-hidden
-          className={`size-4 rounded-full border ${selected ? "border-cream" : "border-border"}`}
+          className={`size-4 rounded-full border ${selected ? "border-cream" : "border-ink/30"}`}
           style={{ backgroundColor: swatch }}
         />
       ) : (

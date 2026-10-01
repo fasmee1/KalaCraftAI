@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type NavItem = { href: string; label: string; icon: LucideIcon; ready: boolean };
 
@@ -22,7 +23,7 @@ export function AdminSidebar({ username }: { username: string }) {
   return (
     <>
       {/* แถบบนสำหรับมือถือ */}
-      <header className="flex items-center justify-between bg-sidebar px-4 py-3 text-beige lg:hidden">
+      <header className="flex items-center justify-between bg-sidebar px-4 py-3 text-on-dark lg:hidden">
         <Brand />
         <button
           type="button"
@@ -36,7 +37,7 @@ export function AdminSidebar({ username }: { username: string }) {
       </header>
 
       <aside
-        className={`${open ? "flex" : "hidden"} flex-col bg-sidebar text-beige lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:shrink-0`}
+        className={`${open ? "flex" : "hidden"} flex-col bg-sidebar text-on-dark lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:shrink-0`}
       >
         <div className="hidden px-6 pb-6 pt-7 lg:block">
           <Brand />
@@ -49,7 +50,7 @@ export function AdminSidebar({ username }: { username: string }) {
               return (
                 <span
                   key={href}
-                  className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] text-beige/40"
+                  className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] text-on-dark/40"
                 >
                   <Icon className="size-5" aria-hidden />
                   {label}
@@ -64,7 +65,7 @@ export function AdminSidebar({ username }: { username: string }) {
                 onClick={() => setOpen(false)}
                 aria-current={active ? "page" : undefined}
                 className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] transition ${
-                  active ? "bg-accent font-semibold text-ink" : "hover:bg-white/10"
+                  active ? "bg-accent font-semibold text-on-accent" : "hover:bg-white/10"
                 }`}
               >
                 <Icon className="size-5" aria-hidden />
@@ -81,9 +82,13 @@ export function AdminSidebar({ username }: { username: string }) {
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">{username}</p>
-              <p className="text-xs text-beige/60">ผู้ดูแลระบบ</p>
+              <p className="text-xs text-on-dark/60">ผู้ดูแลระบบ</p>
             </div>
           </div>
+          <ThemeToggle
+            label
+            className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] hover:bg-white/10"
+          />
           <button
             type="button"
             onClick={() => signOut({ callbackUrl: "/admin/login" })}
@@ -104,7 +109,7 @@ function Brand() {
       <div className="flex size-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-cream">KC</div>
       <div>
         <p className="font-semibold leading-tight">KalaCraft AI</p>
-        <p className="text-xs text-beige/60">ระบบจัดการหลังร้าน</p>
+        <p className="text-xs text-on-dark/60">ระบบจัดการหลังร้าน</p>
       </div>
     </div>
   );

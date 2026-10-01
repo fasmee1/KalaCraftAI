@@ -98,7 +98,7 @@ export function ProductModal({
   return (
     <div
       data-closing={closing || undefined}
-      className="overlay-anim fixed inset-0 z-50 flex items-end justify-center bg-ink/45 sm:items-center sm:p-6"
+      className="overlay-anim fixed inset-0 z-50 flex items-end justify-center bg-scrim/45 sm:items-center sm:p-6"
       onMouseDown={(e) => e.target === e.currentTarget && requestClose()}
     >
       <div
@@ -113,7 +113,7 @@ export function ProductModal({
           type="button"
           onClick={() => requestClose()}
           aria-label="ปิด"
-          className="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full bg-white/90 text-ink shadow hover:bg-white"
+          className="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full bg-surface/90 text-ink shadow hover:bg-surface"
         >
           <X size={20} />
         </button>
@@ -123,7 +123,7 @@ export function ProductModal({
           {/* eslint-disable-next-line @next/next/no-img-element -- signed URL หมดอายุ ไม่ผ่าน next/image optimizer */}
           <img src={product.imageUrl} alt={product.name} className="aspect-[4/3] w-full object-cover md:aspect-auto md:h-full" />
           {manual && (
-            <p className="fade-anim absolute inset-x-4 bottom-4 rounded-2xl bg-white/95 px-4 py-3 text-center text-sm leading-relaxed text-ink shadow">
+            <p className="fade-anim absolute inset-x-4 bottom-4 rounded-2xl bg-surface/95 px-4 py-3 text-center text-sm leading-relaxed text-ink shadow">
               <span className="font-semibold text-primary">กดค้างที่รูป</span> แล้วเลือก “บันทึกรูปภาพ”
             </p>
           )}
@@ -159,7 +159,7 @@ export function ProductModal({
             type="button"
             // ปิด popup นี้ให้จบก่อน แล้วค่อยเปิด popup ออกแบบ — ไม่ซ้อนกันสองชั้น
             onClick={() => requestClose(() => onDesign(product))}
-            className="mt-2.5 flex h-[52px] items-center justify-center gap-2 rounded-[14px] bg-accent text-base font-semibold text-ink shadow-[0_6px_16px_rgba(217,164,65,0.35)] transition hover:brightness-[1.04] active:scale-[0.98]"
+            className="mt-2.5 flex h-[52px] items-center justify-center gap-2 rounded-[14px] bg-accent text-base font-semibold text-on-accent shadow-[0_6px_16px_rgba(217,164,65,0.35)] transition hover:brightness-[1.04] active:scale-[0.98]"
           >
             <Sparkles size={20} />
             สร้างดีไซน์จากสินค้านี้
@@ -199,7 +199,7 @@ function ActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex h-12 items-center justify-center gap-2 rounded-[14px] border border-border bg-white text-sm font-semibold text-ink transition hover:border-primary/50 disabled:opacity-50"
+      className="flex h-12 items-center justify-center gap-2 rounded-[14px] border border-border bg-surface text-sm font-semibold text-ink transition hover:border-primary/50 disabled:opacity-50"
     >
       {busy ? <LoaderCircle size={18} className="animate-spin" /> : icon}
       {children}

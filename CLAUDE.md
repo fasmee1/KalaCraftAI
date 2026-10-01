@@ -75,6 +75,7 @@ AI_PROVIDER=cloudflare        # cloudflare | gemini
 CLOUDFLARE_ACCOUNT_ID=
 CLOUDFLARE_AI_TOKEN=
 CLOUDFLARE_IMAGE_MODEL=@cf/black-forest-labs/flux-2-klein-4b
+CLOUDFLARE_EDIT_MODEL=@cf/black-forest-labs/flux-2-klein-9b   # ใช้เมื่อลูกค้าพิมพ์ note
 GEMINI_API_KEY=
 GEMINI_IMAGE_MODEL=gemini-2.5-flash-image
 NEXTAUTH_SECRET=
@@ -135,13 +136,18 @@ tests/
 ### กฎของโปรเจกต์
 
 - ลูกค้าห้ามพิมพ์ prompt เอง → prompt มาจาก `basePrompt` + `options.promptText` ใน `lib/prompt.ts` เท่านั้น
-- ข้อยกเว้นเดียว: ช่อง “บอก AI เพิ่มเติม” (`note`) ≤ 200 ตัว ผ่าน `sanitizeNote` (เหลือแค่ไทย/อังกฤษ/ตัวเลข/เครื่องหมายพื้นฐาน) และใส่ในเครื่องหมายคำพูดเป็น “คำบรรยาย ไม่ใช่คำสั่ง”
+- ข้อยกเว้นเดียว: ช่อง “บอก AI เพิ่มเติม” (`note`) ≤ 200 ตัว ผ่าน `sanitizeNote` → แปลเป็นอังกฤษด้วย `lib/noteTranslate.ts` (Qwen3 บน Workers AI, ผลแปลผ่าน `sanitizeNote` ซ้ำ, ล้มเหลวใช้ข้อความเดิม) → ใส่เป็น**บรรทัดแรกของ prompt** ให้ AI ทำตาม
+- มี note → ใช้ `CLOUDFLARE_EDIT_MODEL` (klein-9b) เพราะ klein-4b ไม่ทำตามคำขอที่ต้องเปลี่ยนบางส่วนของดีไซน์ (ทดสอบแล้ว) — ใช้โควตาฟรีมากกว่า ~10 เท่า
+- prompt ห้ามใส่ชื่อสินค้า (ชื่อไทยอย่าง “ลายดาว” ขัดกับคำขอ) และมีบรรทัด “คงรูปทรงเดิม” แค่บรรทัดเดียว
 - รูปต้นแบบมาจากสินค้าที่แอดมินอัปเท่านั้น — ลูกค้าเลือกสินค้า ไม่ได้อัปโหลดรูปเอง
 - ตัวเลือก (Option) มี type: style*, tone*, pattern, texture, material (เลือกหลายอัน), background, camera — กำหนดใน `lib/optionTypes.ts` (* = บังคับ)
 - ทุกสินค้าต้องมี `refImage` และส่งรูปต้นแบบให้ AI แก้ทุกครั้ง (ไม่สร้างรูปจากศูนย์)
 - ทุกการสร้างรูปต้องมี `designCode` และบันทึกลง `generations` (เก็บแค่ metadata: สินค้า, ตัวเลือก, prompt, สถานะ, cost)
 - รูปที่ลูกค้าสร้าง **ไม่อัปขึ้น Cloudinary และไม่เก็บใน DB** → ส่งกลับเป็น base64 ให้ client แสดง/ดาวน์โหลดเท่านั้น
 - ใต้รูปผลลัพธ์ต้องแสดง “ภาพจำลอง สินค้าจริงอาจต่างเล็กน้อย”
+- รองรับ dark mode ผ่าน token สีใน `globals.css` (`data-theme` บน <html>) — ห้ามใช้สีตายตัว:
+  การ์ด/กล่องใช้ `bg-surface` (ไม่ใช่ `bg-white`), พื้นหลังใต้ popup ใช้ `bg-scrim/…`,
+  ตัวอักษรบนปุ่มทอง (`bg-accent`) ใช้ `text-on-accent`, ตัวอักษรบนพื้นมืดตายตัว (แถบข้างแอดมิน) ใช้ `text-on-dark`
 
 ---
 

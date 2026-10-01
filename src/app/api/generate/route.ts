@@ -1,7 +1,9 @@
+import { AiQuotaExceededError } from "@/lib/cloudflareAi";
 import { connectDB } from "@/lib/db";
 import { generateDesignCode } from "@/lib/designCode";
-import { editReferenceImage, estimateCostUsd, getAiProvider } from "@/lib/imageAi";
+import { editReferenceImage, estimateCostUsd, getAiProvider, type EditLevel } from "@/lib/imageAi";
 import { OPTION_TYPES, type OptionType } from "@/lib/optionTypes";
+import { translateNote } from "@/lib/noteTranslate";
 import { buildPrompt, sanitizeNote } from "@/lib/prompt";
 import { checkGenerateLimits, getClientIp, hashIp } from "@/lib/rateLimit";
 import { verifyTurnstile } from "@/lib/turnstile";
@@ -34,7 +36,10 @@ export async function POST(request: Request) {
   // 3. rate limit ต่อ IP + งบรายวันทั้งระบบ
   const ipHash = hashIp(ip);
   const provider = getAiProvider();
-  const costUsd = estimateCostUsd(provider);
+  // มีคำขอพิมพ์เอง → ใช้โมเดลแก้รูปตัวใหญ่ (ทำตามคำขอได้) ซึ่งแพงกว่า — คิดงบตามระดับจริง
+  const cleanNote = sanitizeNote(note);
+  const level: EditLevel = cleanNote ? "edit" : "restyle";
+  const costUsd = estimateCostUsd(provider, level);
   const limit = await checkGenerateLimits(ipHash, costUsd);
   if (!limit.ok) {
     return error(
@@ -63,12 +68,12 @@ export async function POST(request: Request) {
   }
 
   // 5. prompt มาจากข้อมูลของแอดมิน + note ที่ sanitize แล้วเท่านั้น
-  const cleanNote = sanitizeNote(note);
+  // แปลคำขอภาษาไทยเป็นอังกฤษให้โมเดลรูปเข้าใจ — note ใน DB เก็บข้อความเดิมของลูกค้าไว้ให้แอดมินอ่าน
+  const { text: promptNote } = await translateNote(cleanNote);
   const finalPrompt = buildPrompt({
-    productName: product.name,
     basePrompt: product.basePrompt ?? "",
     options: options.map((o) => ({ type: o.type as OptionType, promptText: o.promptText })),
-    note: cleanNote,
+    note: promptNote,
   });
 
   // 6. บันทึกเป็น pending ก่อน (นับโควตาทันที) แล้วค่อยเรียก AI
@@ -94,7 +99,7 @@ export async function POST(request: Request) {
 
   const started = Date.now();
   try {
-    const result = await editReferenceImage({ publicId: product.refImage.publicId, prompt: finalPrompt, aspectRatio });
+    const result = await editReferenceImage({ publicId: product.refImage.publicId, prompt: finalPrompt, aspectRatio, level });
     const durationMs = Date.now() - started;
     await Generation.updateOne({ _id: generation._id }, { status: "success", model: result.model, durationMs });
     console.info(
@@ -114,6 +119,10 @@ export async function POST(request: Request) {
       { status: "failed", costUsd: 0, durationMs: Date.now() - started, error: message.slice(0, 500) },
     );
     console.error(`[generate] ${generation.designCode} failed provider=${provider}: ${message}`);
+    // โควตา AI ของทั้งระบบหมด — บอกตรง ๆ ว่ากลับมาได้เมื่อไหร่ (เปลี่ยนตัวเลือกไม่ช่วย)
+    if (err instanceof AiQuotaExceededError) {
+      return error("วันนี้ระบบสร้างภาพครบโควตาแล้ว เปิดให้สร้างใหม่ได้หลัง 07:00 น. (ไม่นับโควตาของคุณ)", 503);
+    }
     return error("AI สร้างภาพไม่สำเร็จ กรุณาลองเปลี่ยนตัวเลือกหรือลองใหม่อีกครั้ง (ไม่นับโควตา)", 502);
   }
 }

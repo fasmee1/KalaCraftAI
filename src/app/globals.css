@@ -3,6 +3,7 @@
 :root {
   --background: #faf6f0;
   --foreground: #2e2118;
+  color-scheme: light;
 }
 
 @theme {
@@ -17,6 +18,37 @@
   --color-ink-muted: #7a6a5c;
   --color-danger: #b94a3e;
   --color-sidebar: #3e2a1c;
+  /* พื้นการ์ด/กล่อง (สว่าง = ขาว) */
+  --color-surface: #ffffff;
+  /* พื้นหลังมืดใต้ popup — มืดเสมอทั้งสองธีม */
+  --color-scrim: #1a120c;
+  /* ตัวอักษรบนปุ่มสีทอง — ทองไม่เปลี่ยนตามธีม ตัวอักษรจึงต้องเข้มเสมอ */
+  --color-on-accent: #2e2118;
+  /* ตัวอักษรบนพื้นมืดที่ไม่เปลี่ยนตามธีม (แถบข้างแอดมิน, กล่อง prompt) */
+  --color-on-dark: #ede3d6;
+}
+
+/* ---------- Dark mode ----------
+   script ใน layout.tsx ตั้ง data-theme="dark" | "light" ก่อนวาดหน้า (ตามที่ผู้ใช้เลือก หรือตามเครื่อง)
+   ทุกสีมาจาก token ด้านบน — เปลี่ยนที่นี่ที่เดียว ทุกหน้าเปลี่ยนตาม
+   primary/secondary สว่างขึ้นในโหมดมืด และ cream กลายเป็นสีเข้ม → ปุ่ม "bg-primary text-cream" ยังอ่านชัด */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #16110d;
+  --foreground: #f2e9df;
+  --color-primary: #dcae82;
+  --color-primary-hover: #e8c29c;
+  --color-secondary: #93b883;
+  --color-accent: #e0ac4a;
+  --color-cream: #16110d;
+  --color-beige: #2d241d;
+  --color-border: #43372d;
+  --color-ink: #f2e9df;
+  --color-ink-muted: #b09f8f;
+  --color-danger: #ef8a7a;
+  --color-sidebar: #0f0b08;
+  --color-surface: #211a15;
+  --color-scrim: #000000;
 }
 
 @theme inline {
@@ -101,6 +133,25 @@ dialog.modal[data-closing]::backdrop {
   --heat-5: #a55a2a;
   --heat-6: #7c3f1b;
   --good-ink: #3f7a33;
+}
+/* โหมดมืด — ตรวจ validator แล้วบนพื้น #211a15 (ทุกคู่): ผ่านทุกข้อ และทุกสี contrast ≥ 3:1
+   heat ramp กลับทิศ: ยิ่งมากยิ่งสว่าง (บนพื้นมืด) */
+:root[data-theme="dark"] .viz-root {
+  --viz-surface: #211a15;
+  --viz-grid: #2f2620;
+  --viz-axis: #4a3d33;
+  --viz-muted: #9c8b7b;
+  --series-1: #a94f27;
+  --series-2: #bc8c1a;
+  --series-3: #6181d9;
+  --heat-0: #2a211b;
+  --heat-1: #3e2b1f;
+  --heat-2: #5a3822;
+  --heat-3: #7b4827;
+  --heat-4: #a05b2d;
+  --heat-5: #c67a3f;
+  --heat-6: #e6a265;
+  --good-ink: #8fc07f;
 }
 
 /* ---------- Popup ฝั่งลูกค้า (เปิด/ปิดแบบนุ่ม) ----------

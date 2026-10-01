@@ -115,7 +115,7 @@ export function Modal({
       }}
       className={`modal m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] ${
         size === "lg" ? "max-w-2xl" : "max-w-md"
-      } flex-col rounded-2xl bg-white p-0 text-ink shadow-[0_16px_48px_rgba(46,33,24,0.25)] backdrop:bg-ink/45 backdrop:backdrop-blur-sm open:flex`}
+      } flex-col rounded-2xl bg-surface p-0 text-ink shadow-[0_16px_48px_rgba(46,33,24,0.25)] backdrop:bg-scrim/45 backdrop:backdrop-blur-sm open:flex`}
     >
       <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
         <h2 className="text-lg font-semibold text-primary">{title}</h2>
@@ -181,7 +181,7 @@ export function Switch({ checked, busy, onChange, label }: { checked: boolean; b
       className="flex items-center gap-2 text-sm disabled:opacity-60"
     >
       <span className={`relative h-6 w-11 rounded-full transition ${checked ? "bg-secondary" : "bg-border"}`}>
-        <span className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${checked ? "left-[22px]" : "left-0.5"}`} />
+        <span className={`absolute top-0.5 size-5 rounded-full bg-surface shadow transition-all ${checked ? "left-[22px]" : "left-0.5"}`} />
       </span>
       <span className={checked ? "text-secondary" : "text-ink-muted"}>{checked ? "เปิด" : "ปิด"}</span>
     </button>
@@ -243,7 +243,7 @@ export function FormError({ message }: { message?: string }) {
 
 /** class ของ input/textarea/select พร้อมกรอบแดงเมื่อมี error */
 export function inputClass(error?: string) {
-  return `w-full rounded-xl border bg-white px-3.5 py-2.5 text-[15px] outline-none transition focus:ring-2 focus:ring-primary/15 ${
+  return `w-full rounded-xl border bg-surface px-3.5 py-2.5 text-[15px] outline-none transition focus:ring-2 focus:ring-primary/15 ${
     error ? "border-danger" : "border-border focus:border-primary"
   }`;
 }

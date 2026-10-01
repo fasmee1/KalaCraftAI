@@ -60,7 +60,7 @@ export function change(current: number, previous: number): number | null {
 /* ================= Card ================= */
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <section className={`rounded-2xl border border-border/70 bg-white ${className}`}>{children}</section>;
+  return <section className={`rounded-2xl border border-border/70 bg-surface ${className}`}>{children}</section>;
 }
 
 /**
@@ -216,7 +216,7 @@ function Tooltip({ x, y, title, rows, containerWidth }: { x: number; y: number; 
   return (
     <div
       role="status"
-      className="pointer-events-none absolute z-10 min-w-[140px] rounded-xl border border-border/70 bg-white px-3 py-2.5 shadow-[0_8px_24px_rgba(46,33,24,0.14)]"
+      className="pointer-events-none absolute z-10 min-w-[140px] rounded-xl border border-border/70 bg-surface px-3 py-2.5 shadow-[0_8px_24px_rgba(46,33,24,0.14)]"
       style={{ left: x, top: y, transform: `translate(${flip ? "calc(-100% - 12px)" : "12px"}, -50%)` }}
     >
       <p className="mb-1.5 text-[11px] text-ink-muted">{title}</p>
@@ -466,7 +466,7 @@ export function BarList({
             <span className="flex min-w-0 items-center gap-2">
               <span className="w-4 shrink-0 text-xs tabular-nums text-ink-muted">{idx + 1}</span>
               {item.swatch && (
-                <span aria-hidden className="size-3 shrink-0 rounded-full border border-black/10" style={{ background: item.swatch }} />
+                <span aria-hidden className="size-3 shrink-0 rounded-full border border-ink/30" style={{ background: item.swatch }} />
               )}
               <span className="truncate text-ink" title={item.label}>
                 {item.label}

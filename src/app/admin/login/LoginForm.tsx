@@ -38,7 +38,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
   }
 
   const inputClass =
-    "w-full rounded-xl border border-border bg-white py-3 pl-11 pr-4 text-[15px] text-ink placeholder:text-ink-muted/70 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15";
+    "w-full rounded-xl border border-border bg-surface py-3 pl-11 pr-4 text-[15px] text-ink placeholder:text-ink-muted/70 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15";
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">

@@ -85,7 +85,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
           <p className="mt-1 text-sm text-ink-muted">ภาพรวมการสร้างดีไซน์ · อัปเดต {fmtTime(data.generatedAt)} น.</p>
         </div>
         <div className="flex items-center gap-2">
-          <div role="radiogroup" aria-label="ช่วงเวลา" className="flex rounded-xl border border-border bg-white p-1">
+          <div role="radiogroup" aria-label="ช่วงเวลา" className="flex rounded-xl border border-border bg-surface p-1">
             {RANGE_OPTIONS.map((r) => {
               const selected = data.rangeDays === r;
               return (
@@ -110,7 +110,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
             onClick={refresh}
             aria-label="โหลดข้อมูลใหม่"
             title="โหลดข้อมูลใหม่"
-            className="flex size-10 items-center justify-center rounded-xl border border-border bg-white text-ink-muted hover:text-ink"
+            className="flex size-10 items-center justify-center rounded-xl border border-border bg-surface text-ink-muted hover:text-ink"
           >
             <RefreshCw className={`size-4 ${pending ? "animate-spin" : ""}`} aria-hidden />
           </button>

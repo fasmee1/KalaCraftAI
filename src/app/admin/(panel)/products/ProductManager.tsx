@@ -112,7 +112,7 @@ export function ProductManager({ initial, categories }: { initial: ProductDTO[];
         </div>
       )}
 
-      <div className="mb-4 flex flex-wrap gap-3 rounded-2xl border border-border bg-white p-4">
+      <div className="mb-4 flex flex-wrap gap-3 rounded-2xl border border-border bg-surface p-4">
         <div className="relative min-w-52 flex-1">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 size-[18px] -translate-y-1/2 text-ink-muted" aria-hidden />
           <input
@@ -149,7 +149,7 @@ export function ProductManager({ initial, categories }: { initial: ProductDTO[];
       ) : (
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((p) => (
-            <li key={p.id} className="flex flex-col overflow-hidden rounded-2xl border border-border bg-white">
+            <li key={p.id} className="flex flex-col overflow-hidden rounded-2xl border border-border bg-surface">
               <div className="relative aspect-[4/3] bg-beige">
                 {/* eslint-disable-next-line @next/next/no-img-element -- รูปมาจาก signed URL ที่หมดอายุ ไม่ผ่าน next/image optimizer */}
                 <img
@@ -159,7 +159,7 @@ export function ProductManager({ initial, categories }: { initial: ProductDTO[];
                   className={`size-full object-cover transition ${p.active ? "" : "opacity-50 grayscale"}`}
                 />
                 {!p.active && (
-                  <span className="absolute left-3 top-3 rounded-full bg-ink/75 px-2.5 py-0.5 text-xs font-medium text-cream">ซ่อนอยู่</span>
+                  <span className="absolute left-3 top-3 rounded-full bg-scrim/75 px-2.5 py-0.5 text-xs font-medium text-cream">ซ่อนอยู่</span>
                 )}
               </div>
               <div className="flex flex-1 flex-col gap-1 px-4 pb-3 pt-3.5">
@@ -219,7 +219,7 @@ export function ProductManager({ initial, categories }: { initial: ProductDTO[];
 
 function EmptyState({ hasItems, canAdd, onAdd }: { hasItems: boolean; canAdd: boolean; onAdd: () => void }) {
   return (
-    <div className="flex flex-col items-center rounded-2xl border border-border bg-white px-6 py-16 text-center">
+    <div className="flex flex-col items-center rounded-2xl border border-border bg-surface px-6 py-16 text-center">
       <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-beige text-primary">
         <Package className="size-6" aria-hidden />
       </div>
@@ -448,7 +448,7 @@ function ImagePicker({
           <>
             {/* eslint-disable-next-line @next/next/no-img-element -- blob preview / signed URL */}
             <img src={shown} alt="รูปต้นแบบ" className="size-full object-cover" />
-            <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 bg-ink/60 py-2 text-xs font-medium text-cream opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
+            <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 bg-scrim/60 py-2 text-xs font-medium text-cream opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
               <RefreshCw className="size-3.5" aria-hidden />
               เปลี่ยนรูป
             </span>

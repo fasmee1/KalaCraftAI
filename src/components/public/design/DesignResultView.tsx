@@ -23,6 +23,7 @@ import { loadDesign, saveDesign, saveEditSelection, type StoredDesign } from "./
 import { base64ToFile, saveImage } from "./imageDownload";
 import { useSmoothClose } from "../useSmoothClose";
 import { Turnstile } from "./Turnstile";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const FB_PAGE = process.env.NEXT_PUBLIC_FB_PAGE;
 
@@ -167,7 +168,7 @@ export function DesignResultView() {
           <ChevronLeft size={22} />
         </Link>
         <h1 className="text-lg font-bold text-primary lg:text-2xl">ผลลัพธ์ดีไซน์</h1>
-        <span className="size-10 lg:hidden" aria-hidden />
+        <ThemeToggle className="flex size-10 shrink-0 items-center justify-center rounded-full bg-beige text-ink transition hover:bg-border/60 lg:ml-auto" />
       </header>
 
       <div className="mt-4 px-6 lg:mt-8 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-10 lg:px-0">
@@ -186,11 +187,11 @@ export function DesignResultView() {
               type="button"
               onClick={() => setExpanded("view")}
               aria-label="ดูภาพเต็มจอ"
-              className="absolute right-4 top-4 flex size-9 items-center justify-center rounded-full bg-white/90 text-ink shadow hover:bg-white"
+              className="absolute right-4 top-4 flex size-9 items-center justify-center rounded-full bg-surface/90 text-ink shadow hover:bg-surface"
             >
               <Maximize2 size={17} />
             </button>
-            <span className="absolute bottom-4 left-4 inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-ink">
+            <span className="absolute bottom-4 left-4 inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-on-accent">
               <Sparkles size={12} /> สร้างด้วย AI
             </span>
             {regenerating && <GeneratingOverlay />}
@@ -211,7 +212,7 @@ export function DesignResultView() {
             <Action icon={<MessageCircle size={19} />} label="ส่งให้เพจ" onClick={sendToPage} disabled={!FB_PAGE} />
           </div>
 
-          <div className="rounded-2xl border border-border bg-white p-4">
+          <div className="rounded-2xl border border-border bg-surface p-4">
             <div className="flex gap-3">
               <div className="flex shrink-0 flex-col items-center gap-1">
                 {/* eslint-disable-next-line @next/next/no-img-element -- signed URL หมดอายุ ไม่ผ่าน optimizer */}
@@ -248,7 +249,7 @@ export function DesignResultView() {
           </p>
 
           {/* มือถือ: แถบล่างติดจอ / เดสก์ท็อป: อยู่ในคอลัมน์ขวา */}
-          <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-white px-6 pb-5 pt-3 lg:static lg:rounded-2xl lg:border lg:p-4">
+          <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface px-6 pb-5 pt-3 lg:static lg:rounded-2xl lg:border lg:p-4">
             {error && <ErrorNote message={error} />}
             <Turnstile onToken={setToken} resetKey={turnstileReset} />
             <div className="mt-2 flex gap-2.5">
@@ -256,7 +257,7 @@ export function DesignResultView() {
                 type="button"
                 onClick={regenerate}
                 disabled={!token || regenerating}
-                className="flex h-[52px] flex-[0.8] items-center justify-center gap-2 rounded-[14px] border border-border bg-white text-base font-semibold text-primary hover:border-primary/50 disabled:opacity-50"
+                className="flex h-[52px] flex-[0.8] items-center justify-center gap-2 rounded-[14px] border border-border bg-surface text-base font-semibold text-primary hover:border-primary/50 disabled:opacity-50"
               >
                 <RefreshCw size={19} className={regenerating ? "animate-spin" : ""} />
                 สร้างใหม่
@@ -298,11 +299,11 @@ export function DesignResultView() {
           aria-modal="true"
           aria-label={expanded === "save" ? "บันทึกรูปภาพ" : "ภาพเต็มจอ"}
           data-closing={lightboxClosing || undefined}
-          className="overlay-anim fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-ink/90 p-4 pt-16"
+          className="overlay-anim fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-scrim/90 p-4 pt-16"
           onClick={() => closeLightbox()}
         >
           {expanded === "save" && (
-            <p className="max-w-sm rounded-2xl bg-white px-4 py-3 text-center text-sm leading-relaxed text-ink">
+            <p className="max-w-sm rounded-2xl bg-surface px-4 py-3 text-center text-sm leading-relaxed text-ink">
               <span className="font-semibold text-primary">กดค้างที่รูป</span> แล้วเลือก “บันทึกรูปภาพ” / “เพิ่มไปยังรูปภาพ”
               <span className="mt-1 block text-xs text-ink-muted">บนคอมพิวเตอร์: คลิกขวาที่รูป → “บันทึกรูปภาพเป็น…”</span>
             </p>
@@ -319,7 +320,7 @@ export function DesignResultView() {
             type="button"
             onClick={() => closeLightbox()}
             aria-label="ปิด"
-            className="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full bg-white/90 text-ink"
+            className="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full bg-surface/90 text-ink"
           >
             <X size={20} />
           </button>
@@ -356,7 +357,7 @@ function Action({
       title={disabled ? "ยังไม่ได้ตั้งค่าเพจ Facebook" : undefined}
       className="group flex flex-col items-center gap-1.5 text-xs text-ink disabled:opacity-40"
     >
-      <span className="flex size-11 items-center justify-center rounded-full border border-border bg-white text-ink transition group-hover:border-primary/50 group-hover:text-primary group-active:scale-95">
+      <span className="flex size-11 items-center justify-center rounded-full border border-border bg-surface text-ink transition group-hover:border-primary/50 group-hover:text-primary group-active:scale-95">
         {icon}
       </span>
       {label}
@@ -376,7 +377,7 @@ function EmptyState() {
       </p>
       <Link
         href="/"
-        className="flex h-12 items-center justify-center gap-2 rounded-[14px] bg-accent px-6 font-semibold text-ink hover:brightness-[1.04]"
+        className="flex h-12 items-center justify-center gap-2 rounded-[14px] bg-accent px-6 font-semibold text-on-accent hover:brightness-[1.04]"
       >
         <Sparkles size={18} /> สร้างดีไซน์ใหม่
       </Link>

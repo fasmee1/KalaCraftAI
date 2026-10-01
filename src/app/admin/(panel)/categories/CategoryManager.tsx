@@ -75,7 +75,7 @@ export function CategoryManager({ initial }: { initial: CategoryDTO[] }) {
         </Button>
       </div>
 
-      <div className="rounded-2xl border border-border bg-white">
+      <div className="rounded-2xl border border-border bg-surface">
         <div className="border-b border-border p-4">
           <div className="relative max-w-sm">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 size-[18px] -translate-y-1/2 text-ink-muted" aria-hidden />

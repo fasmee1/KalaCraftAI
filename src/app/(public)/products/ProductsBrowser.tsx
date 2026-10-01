@@ -9,6 +9,7 @@ import { ProductModal } from "@/components/public/ProductModal";
 import { useSmoothClose } from "@/components/public/useSmoothClose";
 import type { DesignCatalog, ListingProduct } from "@/lib/catalog";
 import { SORTS, type SortValue } from "./sorts";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 
 const PRICE_RANGES = [
@@ -87,6 +88,7 @@ export function ProductsBrowser({
           <ChevronLeft size={22} />
         </Link>
         <h1 className="text-lg font-bold text-primary lg:text-[28px]">สินค้าแนะนำ</h1>
+        <ThemeToggle className="flex size-10 shrink-0 items-center justify-center rounded-full bg-beige text-ink transition hover:bg-border/60 absolute right-0 lg:static lg:ml-auto" />
       </header>
 
       {/* ค้นหา + ตัวกรอง */}
@@ -99,7 +101,7 @@ export function ProductsBrowser({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="ค้นหาสินค้า"
-            className="h-[46px] w-full rounded-2xl border border-border bg-white pl-11 pr-4 text-[15px] text-ink outline-none transition placeholder:text-ink-muted/80 focus:border-primary focus:ring-2 focus:ring-primary/15"
+            className="h-[46px] w-full rounded-2xl border border-border bg-surface pl-11 pr-4 text-[15px] text-ink outline-none transition placeholder:text-ink-muted/80 focus:border-primary focus:ring-2 focus:ring-primary/15"
           />
         </label>
         <button
@@ -153,7 +155,7 @@ export function ProductsBrowser({
 
       {/* รายการสินค้า */}
       {visible.length === 0 ? (
-        <div className="mt-6 flex flex-col items-center rounded-3xl border border-border bg-white px-6 py-14 text-center">
+        <div className="mt-6 flex flex-col items-center rounded-3xl border border-border bg-surface px-6 py-14 text-center">
           <span className="flex size-14 items-center justify-center rounded-full bg-beige text-primary">
             <PackageSearch size={26} />
           </span>
@@ -185,7 +187,7 @@ export function ProductsBrowser({
       <DesignStudio
         catalog={catalog}
         preselect={preselect}
-        className="fixed bottom-6 left-1/2 z-40 flex h-[52px] -translate-x-1/2 items-center whitespace-nowrap justify-center gap-2 rounded-full bg-accent px-6 text-base font-semibold text-ink shadow-[0_8px_24px_rgba(217,164,65,0.45)] transition hover:brightness-[1.04] active:scale-[0.98] lg:bottom-8 lg:h-14 lg:px-8"
+        className="fixed bottom-6 left-1/2 z-40 flex h-[52px] -translate-x-1/2 items-center whitespace-nowrap justify-center gap-2 rounded-full bg-accent px-6 text-base font-semibold text-on-accent shadow-[0_8px_24px_rgba(217,164,65,0.45)] transition hover:brightness-[1.04] active:scale-[0.98] lg:bottom-8 lg:h-14 lg:px-8"
       />
 
       {viewing && (
@@ -227,7 +229,7 @@ function CategoryChip({ active, onClick, children }: { active: boolean; onClick:
       aria-selected={active}
       onClick={onClick}
       className={`h-[35px] shrink-0 rounded-full border px-4 text-sm transition ${
-        active ? "border-primary bg-primary font-semibold text-cream" : "border-border bg-white text-ink hover:border-primary/50"
+        active ? "border-primary bg-primary font-semibold text-cream" : "border-border bg-surface text-ink hover:border-primary/50"
       }`}
     >
       {children}
@@ -263,7 +265,7 @@ function PriceFilterSheet({
   return (
     <div
       data-closing={closing || undefined}
-      className="overlay-anim fixed inset-0 z-50 flex items-end justify-center bg-ink/45 sm:items-center sm:p-6"
+      className="overlay-anim fixed inset-0 z-50 flex items-end justify-center bg-scrim/45 sm:items-center sm:p-6"
       onMouseDown={(e) => e.target === e.currentTarget && requestClose()}
     >
       <div
@@ -296,7 +298,7 @@ function PriceFilterSheet({
                 aria-checked={selected}
                 onClick={() => setDraft(r.value)}
                 className={`flex h-12 w-full items-center justify-between rounded-2xl border px-4 text-[15px] transition ${
-                  selected ? "border-[1.5px] border-primary bg-white font-semibold text-ink" : "border-border bg-white text-ink hover:border-primary/40"
+                  selected ? "border-[1.5px] border-primary bg-surface font-semibold text-ink" : "border-border bg-surface text-ink hover:border-primary/40"
                 }`}
               >
                 {r.label}

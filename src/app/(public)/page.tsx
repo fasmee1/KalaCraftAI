@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { DesignStudio } from "@/components/public/design/DesignStudio";
 import { FeaturedGrid } from "@/components/public/FeaturedGrid";
-import { ChevronIcon, ImageIcon, SparkleIcon, SunIcon } from "@/components/public/icons";
+import { ChevronIcon, ImageIcon, SparkleIcon } from "@/components/public/icons";
 import { getProductListing, type DesignCatalog, type ListingProduct } from "@/lib/catalog";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const FEATURED_COUNT = 8;
 
@@ -34,20 +35,14 @@ function Header() {
           <span className="block text-[11px] leading-[1.3] text-ink-muted">หัตถกรรมกะลามะพร้าว</span>
         </span>
       </Link>
-      <button
-        type="button"
-        aria-label="สลับธีม"
-        className="flex size-10 items-center justify-center rounded-full bg-beige text-ink transition hover:bg-border/60"
-      >
-        <SunIcon size={20} />
-      </button>
+      <ThemeToggle className="flex size-10 shrink-0 items-center justify-center rounded-full bg-beige text-ink transition hover:bg-border/60" />
     </header>
   );
 }
 
 function Hero({ catalog }: { catalog: DesignCatalog }) {
   return (
-    <section className="mt-[27px] flex min-h-[552px] flex-col items-center justify-center rounded-3xl border border-border bg-white px-6 py-10 text-center shadow-[0_8px_24px_rgba(107,66,38,0.08)] lg:mt-8 lg:grid lg:min-h-0 lg:grid-cols-2 lg:gap-12 lg:px-16 lg:py-16 lg:text-left">
+    <section className="mt-[27px] flex min-h-[552px] flex-col items-center justify-center rounded-3xl border border-border bg-surface px-6 py-10 text-center shadow-[0_8px_24px_rgba(107,66,38,0.08)] lg:mt-8 lg:grid lg:min-h-0 lg:grid-cols-2 lg:gap-12 lg:px-16 lg:py-16 lg:text-left">
       <div className="lg:flex lg:justify-center">
         <HeroIllustration />
       </div>
@@ -72,7 +67,7 @@ function Hero({ catalog }: { catalog: DesignCatalog }) {
 
         <DesignStudio
           catalog={catalog}
-          className="mt-6 flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-accent px-6 text-base font-semibold text-ink shadow-[0_6px_16px_rgba(217,164,65,0.35)] transition hover:brightness-[1.04] active:scale-[0.98] lg:mt-8 lg:h-14 lg:w-auto lg:px-10"
+          className="mt-6 flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-accent px-6 text-base font-semibold text-on-accent shadow-[0_6px_16px_rgba(217,164,65,0.35)] transition hover:brightness-[1.04] active:scale-[0.98] lg:mt-8 lg:h-14 lg:w-auto lg:px-10"
         />
 
         <Steps />
@@ -89,7 +84,7 @@ function HeroIllustration() {
         <DesignTile className="left-[32px] top-[25px] h-[124px] w-[96px] -rotate-10 bg-[linear-gradient(to_bottom_right,#E3C08A,#B98B5E_50%)]" />
         <DesignTile className="left-[126.5px] top-[25.5px] h-[124px] w-[96px] rotate-10 bg-[linear-gradient(to_bottom_right,#8FA876,#5A7D4F_50%)]" />
         <DesignTile className="left-[69px] top-[12px] h-[144px] w-[112px] bg-[linear-gradient(to_bottom_right,#A9744C,#6B4226_50%)]" />
-        <span className="absolute left-[162px] top-0 flex size-10 items-center justify-center rounded-full border-[3px] border-white bg-accent text-ink">
+        <span className="absolute left-[162px] top-0 flex size-10 items-center justify-center rounded-full border-[3px] border-surface bg-accent text-on-accent">
           <SparkleIcon size={20} />
         </span>
       </div>
@@ -100,7 +95,7 @@ function HeroIllustration() {
 function DesignTile({ className }: { className: string }) {
   return (
     <div
-      className={`absolute flex items-center justify-center rounded-2xl border-[3px] border-white text-cream shadow-[0_6px_14px_rgba(46,33,24,0.18)] ${className}`}
+      className={`absolute flex items-center justify-center rounded-2xl border-[3px] border-surface text-cream shadow-[0_6px_14px_rgba(46,33,24,0.18)] ${className}`}
     >
       <ImageIcon size={26} />
     </div>
@@ -139,7 +134,7 @@ function FeaturedProducts({ catalog, products }: { catalog: DesignCatalog; produ
       </div>
 
       {products.length === 0 ? (
-        <p className="mt-[17px] rounded-2xl border border-border bg-white px-4 py-10 text-center text-sm text-ink-muted">
+        <p className="mt-[17px] rounded-2xl border border-border bg-surface px-4 py-10 text-center text-sm text-ink-muted">
           ยังไม่มีสินค้าแนะนำในขณะนี้
         </p>
       ) : (

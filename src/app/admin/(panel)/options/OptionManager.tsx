@@ -117,7 +117,7 @@ export function OptionManager({ initial }: { initial: OptionDTO[] }) {
         </p>
       )}
 
-      <div className="rounded-2xl border border-border bg-white">
+      <div className="rounded-2xl border border-border bg-surface">
         <div className="space-y-3 border-b border-border p-4">
           <div className="flex flex-wrap gap-2" role="tablist" aria-label="หมวดตัวเลือก">
             <FilterChip active={filter === "all"} onClick={() => setFilter("all")} label="ทั้งหมด" count={items.length} />
@@ -248,7 +248,7 @@ function FilterChip({
 
 function OptionVisual({ option }: { option: Pick<OptionDTO, "type" | "swatch" | "preview"> }) {
   if (option.type === "tone" && option.swatch) {
-    return <span aria-hidden className="size-10 rounded-full border border-border" style={{ backgroundColor: option.swatch }} />;
+    return <span aria-hidden className="size-10 rounded-full border border-ink/30" style={{ backgroundColor: option.swatch }} />;
   }
   if (option.type === "pattern") {
     return (
@@ -421,7 +421,7 @@ function OptionFormDialog({
                   type="color"
                   value={form.swatch}
                   onChange={(e) => set("swatch", e.target.value)}
-                  className="h-11 w-14 cursor-pointer rounded-xl border border-border bg-white p-1"
+                  className="h-11 w-14 cursor-pointer rounded-xl border border-border bg-surface p-1"
                 />
                 <input
                   aria-label="รหัสสี"

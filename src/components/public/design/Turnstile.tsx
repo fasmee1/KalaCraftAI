@@ -2,6 +2,7 @@
 
 import Script from "next/script";
 import { useEffect, useRef, useState } from "react";
+import { currentTheme } from "@/components/ThemeToggle";
 
 type TurnstileApi = {
   render: (el: HTMLElement, opts: Record<string, unknown>) => string;
@@ -35,7 +36,7 @@ export function Turnstile({ onToken, resetKey }: { onToken: (token: string | nul
     const id = window.turnstile.render(containerRef.current, {
       sitekey: siteKey,
       language: "th",
-      theme: "light", // เว็บเป็นธีมสว่าง — ไม่ให้ตามโหมดมืดของเครื่อง
+      theme: currentTheme(), // ตามธีมของเว็บ (ไม่ใช่ของเครื่อง) — ผู้ใช้อาจสลับเองด้วยปุ่มธีม
       size: "flexible",
       // ซ่อนกล่องไว้ ขึ้นมาให้กดเฉพาะเมื่อ Cloudflare สงสัยว่าเป็นบอท — ลูกค้าทั่วไปไม่เห็นอะไรเลย
       appearance: "interaction-only",

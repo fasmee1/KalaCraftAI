@@ -1,4 +1,4 @@
-// เพิ่มสินค้าตัวอย่าง 20 รายการ พร้อมรูปต้นแบบที่สร้างด้วย Cloudflare Workers AI แล้วอัปขึ้น Cloudinary
+// เพิ่มสินค้าตัวอย่าง 25 รายการ พร้อมรูปต้นแบบที่สร้างด้วย Cloudflare Workers AI แล้วอัปขึ้น Cloudinary
 // รูปเป็น "ภาพตัวอย่าง" จาก AI — ควรเปลี่ยนเป็นรูปถ่ายสินค้าจริงของร้านผ่านหน้าแอดมินภายหลัง
 // รันซ้ำได้: ข้ามสินค้าที่มีชื่อซ้ำอยู่แล้ว
 // ใช้: npm run seed:products
@@ -181,12 +181,61 @@ const PRODUCTS: Seed[] = [
     subject: "a wall clock made from a coconut shell with wooden clock hands and simple hour markers",
     basePrompt: "Keep it a wall clock with hands and hour markers.",
   },
+  // เครื่องประดับ
+  {
+    category: "decorations",
+    name: "ต่างหูกะลาทรงหยดน้ำ",
+    price: 159,
+    description: "ต่างหูกะลามะพร้าวทรงหยดน้ำ ขัดเงา ตะขอสีทอง น้ำหนักเบา ใส่สบายทั้งวัน",
+    subject:
+      "a pair of teardrop-shaped dangle earrings made from thin polished coconut shell pieces with small gold hooks, laid side by side",
+    basePrompt: "Keep it a matching pair of teardrop dangle earrings with hooks.",
+  },
+  {
+    category: "decorations",
+    name: "สร้อยคอจี้กะลาแกะลายดอกไม้",
+    price: 259,
+    description: "จี้กะลามะพร้าวแกะลายดอกไม้ด้วยมือ ร้อยเชือกฝ้ายปรับความยาวได้",
+    subject:
+      "a round pendant necklace, the pendant is a thin polished coconut shell disc with a hand-carved flower, on a thin brown cotton cord arranged in a gentle curve",
+    basePrompt: "Keep it a pendant necklace on a cord.",
+  },
+  {
+    category: "decorations",
+    name: "กำไลข้อมือลูกปัดกะลา",
+    price: 199,
+    description: "กำไลลูกปัดกะลามะพร้าวขัดมัน ร้อยยางยืด ใส่ได้ทั้งหญิงและชาย",
+    subject: "a stretch bracelet of small round polished dark brown coconut shell beads forming a neat circle",
+    basePrompt: "Keep it a beaded bracelet in a circle.",
+  },
+  {
+    category: "decorations",
+    name: "แหวนกะลาฝังเรซิน",
+    price: 149,
+    description: "แหวนกะลามะพร้าวขัดเงา ฝังเรซินใสลายคลื่น งานทำมือทีละวง",
+    subject: "a finger ring made from polished coconut shell with a band of clear turquoise resin inlay, standing upright",
+    basePrompt: "Keep it a single ring with the resin inlay band.",
+  },
+  {
+    category: "decorations",
+    name: "กิ๊บติดผมกะลา",
+    price: 129,
+    description: "กิ๊บติดผมกะลามะพร้าวทรงวงรี ขัดเรียบ ตัวหนีบโลหะแข็งแรง",
+    subject: "an oval hair barrette clip made from a polished coconut shell plate with a metal clasp, shown from the front at a slight angle",
+    basePrompt: "Keep it an oval hair barrette with a clasp.",
+  },
 ];
 
+// หมวดที่สินค้าตัวอย่างใช้ แต่ npm run seed ไม่ได้สร้างให้ (slug ตรงกับที่แอดมินสร้างไว้)
+const EXTRA_CATEGORIES = [{ slug: "decorations", name: "เครื่องประดับ" }];
+
 // ภาพสไตล์เดียวกันทุกชิ้น: พื้นหลังสว่าง ไม่มีอะไรรบกวน เหมาะเป็นรูปต้นแบบให้ AI แก้ต่อ
+// ไม่ใช้คำว่า "fiber" — เคยทำให้ AI เติมขน/เส้นใยมะพร้าวฟู ๆ รอบชิ้นงาน
 const photoPrompt = (subject: string) =>
   `Professional e-commerce product photograph of ${subject}, handcrafted from real coconut shell, ` +
-  "authentic coconut shell fiber texture, centered composition, whole product fully visible, " +
+  "fully cleaned coconut shell sanded smooth and polished, clean smooth surface and crisp clean edges, " +
+  "completely free of husk, loose fibers or hairs, natural shell grain visible, " +
+  "centered composition, whole product fully visible, " +
   "plain warm off-white seamless background, soft natural studio lighting, gentle soft shadow, " +
   "sharp focus, photorealistic, high detail, no text, no watermark";
 
@@ -232,6 +281,13 @@ async function main() {
   await connectDB();
   const regen = process.argv.indexOf("--regen");
   if (regen > -1) return regenerate(process.argv[regen + 1] ?? "");
+  for (const [i, c] of EXTRA_CATEGORIES.entries()) {
+    // เช็คทั้ง slug และชื่อ — ชื่อประเภทเป็น unique ถ้าแอดมินสร้างไว้แล้วด้วย slug อื่นจะไม่สร้างซ้ำ
+    if (!(await Category.exists({ $or: [{ slug: c.slug }, { name: c.name }] }))) {
+      await Category.create({ ...c, sortOrder: 100 + i });
+      console.log(`สร้างประเภท "${c.name}" แล้ว`);
+    }
+  }
   const categories = new Map((await Category.find().select("slug").lean()).map((c) => [c.slug, c._id]));
   const outDir = path.join(process.cwd(), "ai-test-output", "products");
   await mkdir(outDir, { recursive: true });

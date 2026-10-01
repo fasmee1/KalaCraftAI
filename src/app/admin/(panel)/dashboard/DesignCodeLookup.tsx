@@ -159,7 +159,7 @@ export function DesignCodeLookup({ pick }: { pick: string | null }) {
                 {copied ? "คัดลอกแล้ว" : "คัดลอก"}
               </button>
             </div>
-            <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-lg bg-sidebar px-3 py-2.5 font-mono text-[11px] leading-relaxed text-beige">
+            <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-lg bg-sidebar px-3 py-2.5 font-mono text-[11px] leading-relaxed text-on-dark">
               {result.finalPrompt}
             </pre>
           </div>

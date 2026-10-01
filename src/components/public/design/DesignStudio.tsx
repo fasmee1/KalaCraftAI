@@ -142,7 +142,7 @@ export function DesignStudio({
       {open && (
         <div
           data-closing={closing || undefined}
-          className="overlay-anim fixed inset-0 z-50 flex items-end justify-center bg-ink/45 sm:items-center sm:p-6"
+          className="overlay-anim fixed inset-0 z-50 flex items-end justify-center bg-scrim/45 sm:items-center sm:p-6"
           onMouseDown={(e) => e.target === e.currentTarget && close()}
         >
           <div
@@ -200,7 +200,7 @@ export function DesignStudio({
               {loading && <GeneratingOverlay />}
             </div>
 
-            <footer className="border-t border-border bg-white px-5 pb-5 pt-3">
+            <footer className="border-t border-border bg-surface px-5 pb-5 pt-3">
               {error && <ErrorNote message={error} />}
               <p className={`mb-2 flex items-center gap-1.5 text-xs ${ready && token ? "text-secondary" : "text-ink-muted"}`}>
                 {ready && !token ? (
@@ -233,7 +233,7 @@ export function DesignStudio({
                   type="button"
                   onClick={generate}
                   disabled={!ready || !token || loading}
-                  className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-[14px] bg-accent text-base font-semibold text-ink shadow-[0_6px_16px_rgba(217,164,65,0.35)] transition hover:brightness-[1.04] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+                  className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-[14px] bg-accent text-base font-semibold text-on-accent shadow-[0_6px_16px_rgba(217,164,65,0.35)] transition hover:brightness-[1.04] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
                 >
                   {loading ? <LoaderCircle size={20} className="animate-spin" /> : <Sparkles size={20} />}
                   {loading ? "กำลังสร้าง…" : "สร้างภาพ AI"}
