@@ -54,7 +54,7 @@ export function ProductCard({
         />
       )}
       <div className="absolute right-0 top-0 z-10">
-        <FavoriteButton name={product.name} />
+        <FavoriteButton productId={product.id} name={product.name} />
       </div>
     </article>
   );

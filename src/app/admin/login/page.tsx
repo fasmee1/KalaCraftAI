@@ -13,7 +13,9 @@ function safeCallback(value: string | string[] | undefined): string {
 }
 
 export default async function AdminLoginPage(props: PageProps<"/admin/login">) {
-  const { callbackUrl } = await props.searchParams;
+  const { callbackUrl, error } = await props.searchParams;
+  // NextAuth ส่ง error ของการล็อกอิน Google (ฝั่งลูกค้า) มาที่หน้านี้ — พากลับหน้าแรกแทน
+  if (error && error !== "CredentialsSignin") redirect("/?login=failed");
   const target = safeCallback(callbackUrl);
   if (await getAdminSession()) redirect(target);
 

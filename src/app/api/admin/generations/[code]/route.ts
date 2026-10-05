@@ -2,6 +2,7 @@ import { getAdminSession } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { DESIGN_CODE_PATTERN } from "@/lib/designCode";
 import { OPTION_TYPES } from "@/lib/optionTypes";
+import "@/models/Customer"; // ลงทะเบียน model ให้ populate ใช้ได้
 import { Generation } from "@/models/Generation";
 import { Option } from "@/models/Option";
 
@@ -11,6 +12,8 @@ export type GenerationLookup = {
   createdAt: string;
   sentToPageAt: string | null;
   product: { id: string; name: string } | null;
+  /** ลูกค้าที่ล็อกอินด้วย Google ตอนสร้าง — null = ไม่ได้ล็อกอิน */
+  customer: { name: string; email: string } | null;
   options: { type: string; typeLabel: string; label: string }[];
   note: string;
   aspectRatio: string;
@@ -33,6 +36,7 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/admin/gener
   await connectDB();
   const g = await Generation.findOne({ designCode: String(code) })
     .populate<{ product: { _id: unknown; name: string } | null }>("product", "name")
+    .populate<{ customer: { name: string; email: string } | null }>("customer", "name email")
     .lean();
   if (!g) return Response.json({ error: `ไม่พบรหัส ${code}` }, { status: 404 });
 
@@ -46,6 +50,7 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/admin/gener
     createdAt: new Date(g.createdAt).toISOString(),
     sentToPageAt: g.sentToPageAt ? new Date(g.sentToPageAt).toISOString() : null,
     product: g.product ? { id: String(g.product._id), name: g.product.name } : null,
+    customer: g.customer ? { name: g.customer.name, email: g.customer.email } : null,
     options: options
       .sort((a, b) => (typeOrder.get(a.type) ?? 99) - (typeOrder.get(b.type) ?? 99))
       .map((o) => ({ type: o.type, typeLabel: typeLabel.get(o.type) ?? o.type, label: o.label })),

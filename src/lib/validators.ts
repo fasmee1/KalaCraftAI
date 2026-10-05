@@ -100,6 +100,9 @@ export const generateSchema = z.object({
 
 export type GenerateInput = z.infer<typeof generateSchema>;
 
+/** body ของ POST /api/me/favorites — เพิ่ม/เอาสินค้าออกจากรายการโปรดของลูกค้าที่ล็อกอิน */
+export const favoriteSchema = z.object({ productId: objectIdSchema, favorite: z.boolean() });
+
 /** ตัวเลือกดีไซน์ (แอดมิน) — swatch ใช้กับโทนสี, preview ใช้กับลวดลาย ชนิดอื่นจะถูกล้างเป็น null */
 export const optionInputSchema = z
   .object({

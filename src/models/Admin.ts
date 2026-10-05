@@ -1,4 +1,5 @@
-import { Schema, model, models, type InferSchemaType, type Model } from "mongoose";
+import { Schema, type InferSchemaType } from "mongoose";
+import { defineModel } from "./defineModel";
 
 const AdminSchema = new Schema(
   {
@@ -13,4 +14,4 @@ const AdminSchema = new Schema(
 
 export type AdminDoc = InferSchemaType<typeof AdminSchema>;
 
-export const Admin: Model<AdminDoc> = models.Admin || model<AdminDoc>("Admin", AdminSchema);
+export const Admin = defineModel<AdminDoc>("Admin", AdminSchema);

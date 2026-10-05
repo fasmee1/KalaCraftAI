@@ -1,16 +1,16 @@
 # CLAUDE.md — Coconut Shell AI Designer
 
 เว็บสร้างภาพดีไซน์สินค้ากะลามะพร้าวด้วย AI
-- ลูกค้า: ไม่ต้องล็อกอิน → เลือกสินค้า + ตัวเลือก → AI แก้รูปต้นแบบ (image edit) → ดาวน์โหลด / ส่งรหัสดีไซน์ให้เพจ
+- ลูกค้า: ไม่ต้องล็อกอิน (ล็อกอินด้วย Google ได้ถ้าต้องการโควตาต่อวันมากขึ้น) → เลือกสินค้า + ตัวเลือก → AI แก้รูปต้นแบบ (image edit) → ดาวน์โหลด / ส่งรหัสดีไซน์ให้เพจ
 - แอดมิน: ล็อกอิน → Dashboard, CRUD ประเภทสินค้า / สินค้า / ตัวเลือก
 
-Stack: Next.js (App Router, TypeScript) · MongoDB (Mongoose) · AI แก้รูปแบบ image-to-image: Cloudflare Workers AI (`flux-2-klein-4b`, ค่าเริ่มต้น, โควตาฟรีรายวัน) หรือ Google Gemini (Nano Banana — `gemini-2.5-flash-image`, เสียเงิน) เลือกด้วย `AI_PROVIDER` · Cloudinary (เก็บรูปต้นแบบสินค้าเท่านั้น) · NextAuth (Credentials)
+Stack: Next.js (App Router, TypeScript) · MongoDB (Mongoose) · AI แก้รูปแบบ image-to-image: Cloudflare Workers AI (`flux-2-klein-4b`, ค่าเริ่มต้น, โควตาฟรีรายวัน) หรือ Google Gemini (Nano Banana — `gemini-2.5-flash-image`, เสียเงิน) เลือกด้วย `AI_PROVIDER` · Cloudinary (เก็บรูปต้นแบบสินค้าเท่านั้น) · NextAuth (Credentials สำหรับแอดมิน, Google สำหรับลูกค้า)
 
 ---
 
 ## การทำงานของระบบ
 
-### ลูกค้า (ไม่ต้องล็อกอิน)
+### ลูกค้า (ไม่บังคับล็อกอิน)
 
 ```
 หน้าแรก → เลือกประเภท → เลือกสินค้า → เลือกตัวเลือก (สไตล์/ลาย/สี/ข้อความสลัก)
@@ -20,16 +20,22 @@ Stack: Next.js (App Router, TypeScript) · MongoDB (Mongoose) · AI แก้ร
 → ลูกค้าแนบรูปเองในแชท
 ```
 
+ปุ่มบัญชีบน header (หน้าแรก, หน้าสินค้า) → "เข้าสู่ระบบด้วย Google" → ได้ role `customer` + โควตาต่อวันมากขึ้น (นับต่อบัญชี)
+ลูกค้าที่ล็อกอิน → เมนูบัญชี → "ดีไซน์ของฉัน" (`/designs`): รายการดีไซน์ที่เคยสร้าง (metadata จาก server) + รูปผลลัพธ์ที่เก็บใน IndexedDB ของเครื่องนั้น (สูงสุด 50 รูป, ออกจากระบบ = ลบรูปในเครื่อง, เครื่องอื่นไม่เห็นรูป)
+ลูกค้าที่ล็อกอิน → กดหัวใจบนการ์ดสินค้า = เก็บเข้า "รายการโปรด" (`/favorites`, ผูกกับบัญชีใน `customers.favorites`) — ไม่ล็อกอินกดหัวใจแล้วขึ้นชวนเข้าสู่ระบบ
+แถบเมนูบน (`SiteNav`) ใช้ในหน้าแรก / สินค้า / รายการโปรด / ดีไซน์ของฉัน
+หน้าผลลัพธ์ไม่มีปุ่มล็อกอิน เพราะการเด้งไป Google ทำให้รูปที่เพิ่งสร้างหาย
+
 ### `POST /api/generate` (ลำดับการทำงาน)
 
 1. validate body ด้วย Zod (`productId`, `optionIds[]`, `aspectRatio`, `note?`, `turnstileToken`)
 2. ตรวจ Turnstile → ไม่ผ่าน = 403
-3. ตรวจ rate limit ต่อ `ipHash` และงบรายวันทั้งระบบ → เกิน = 429
+3. ตรวจ rate limit (ล็อกอิน Google = ต่อบัญชี `RATE_LIMIT_PER_DAY_USER`, ไม่ล็อกอิน = ต่อ `ipHash` `RATE_LIMIT_PER_DAY`) และงบรายวันทั้งระบบ → เกิน = 429
 4. โหลด product + options จาก DB (ต้อง `active: true`)
 5. ประกอบ prompt ใน `lib/prompt.ts` (basePrompt + promptText + `note` ที่ sanitize แล้ว)
 6. ดึง `refImage` จาก Cloudinary → ส่งรูป + prompt ให้ AI (`editReferenceImage` ใน `lib/imageAi.ts`)
 7. บันทึก `generations` เป็น `pending` ก่อนเรียก AI (metadata เท่านั้น, ไม่มีรูป) + สร้าง `designCode` (`KC-XXXXXX`) แล้วอัปเดตเป็น `success`/`failed`
-8. คืน `{ designCode, imageBase64 }` → **รูปไม่ถูกเก็บที่ไหนเลย**
+8. คืน `{ designCode, imageBase64 }` → **รูปไม่ถูกเก็บบน server เลย** (ลูกค้าที่ล็อกอิน: เบราว์เซอร์เก็บสำเนาใน IndexedDB ของเครื่องเอง)
 
 error จาก AI (รวมถึงถูก safety filter บล็อก หรือโควตาฟรีรายวันหมด) → บันทึก `status: failed`, ไม่นับโควตาลูกค้า, คืนข้อความทั่วไป
 
@@ -41,7 +47,7 @@ error จาก AI (รวมถึงถูก safety filter บล็อก �
 → ประเภทสินค้า: CRUD, เปิด/ปิด active, เรียงลำดับ
 → สินค้า: CRUD + อัป refImage (signed upload → Cloudinary) + basePrompt
 → ตัวเลือก: CRUD (type, label, promptText)
-→ ค้นหา designCode: เห็นสินค้า + ตัวเลือก + prompt + เวลา (ไม่มีรูป)
+→ ค้นหา designCode: เห็นสินค้า + ตัวเลือก + prompt + เวลา + ชื่อ/อีเมลลูกค้าถ้าล็อกอิน (ไม่มีรูป)
 ```
 
 ลบ/ปิดสินค้า → ใช้ `active: false` (soft delete) เพื่อไม่ให้ประวัติ `generations` เสีย
@@ -80,6 +86,8 @@ GEMINI_API_KEY=
 GEMINI_IMAGE_MODEL=gemini-2.5-flash-image
 NEXTAUTH_SECRET=
 NEXTAUTH_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=               # ล็อกอินลูกค้าด้วย Google — เว้นว่าง = ปิด
+GOOGLE_CLIENT_SECRET=           # redirect URI: <NEXTAUTH_URL>/api/auth/callback/google
 CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
@@ -88,7 +96,8 @@ TURNSTILE_SECRET_KEY=           # dev ใช้ test key: 1x00000000000000000000
 NEXT_PUBLIC_TURNSTILE_SITE_KEY= # dev ใช้ test key: 1x00000000000000000000AA
 IP_HASH_SALT=                   # salt สำหรับ hash IP
 NEXT_PUBLIC_FB_PAGE=         # ชื่อเพจสำหรับลิงก์ m.me
-RATE_LIMIT_PER_DAY=5
+RATE_LIMIT_PER_DAY=2            # ไม่ล็อกอิน (ต่อ IP)
+RATE_LIMIT_PER_DAY_USER=10      # ล็อกอิน Google (ต่อบัญชี)
 DAILY_BUDGET_USD=10
 ```
 
@@ -100,7 +109,7 @@ DAILY_BUDGET_USD=10
 src/
 ├─ app/
 │  ├─ (public)/              # หน้าลูกค้า: เลือกประเภท → สินค้า → ตัวเลือก → ผลลัพธ์
-│  ├─ admin/                 # หน้าแอดมิน (ถูกกั้นด้วย middleware)
+│  ├─ admin/                 # หน้าแอดมิน (ถูกกั้นด้วย proxy.ts)
 │  │  ├─ login/
 │  │  ├─ dashboard/
 │  │  ├─ categories/
@@ -109,6 +118,8 @@ src/
 │  └─ api/
 │     ├─ generate/           # POST สร้างรูป (rate limit + captcha)
 │     ├─ generations/[code]/ # สถานะ / mark ส่งเพจแล้ว
+│     ├─ me/generations/     # GET ประวัติดีไซน์ของลูกค้าที่ล็อกอิน (metadata เท่านั้น)
+│     ├─ me/favorites/       # GET/POST รายการโปรดของลูกค้าที่ล็อกอิน
 │     └─ admin/              # CRUD + dashboard (ต้อง auth)
 ├─ lib/
 │  ├─ db.ts                  # เชื่อม MongoDB
@@ -117,17 +128,21 @@ src/
 │  ├─ gemini.ts              # เรียก Gemini แก้รูปต้นแบบ (server only)
 │  ├─ cloudinary.ts          # อัปโหลด/ลบ/สร้าง URL รูป (server only)
 │  ├─ prompt.ts              # ประกอบ prompt จาก basePrompt + options
-│  ├─ auth.ts                # NextAuth config
-│  ├─ rateLimit.ts           # จำกัดครั้งต่อ IP + งบรายวัน (รีเซ็ตเที่ยงคืนเวลาไทย)
+│  ├─ auth.ts                # NextAuth config (แอดมิน: Credentials, ลูกค้า: Google) + getAdminSession/getCustomerId
+│  ├─ roles.ts               # เช็ค role ของ session (admin | customer)
+│  ├─ rateLimit.ts           # จำกัดครั้งต่อบัญชี/IP + งบรายวัน (รีเซ็ตเที่ยงคืนเวลาไทย)
+│  ├─ quota.ts               # จำนวนครั้งต่อวัน + เงื่อนไขการนับ (ไม่มี server-only)
 │  ├─ turnstile.ts           # ตรวจ captcha ฝั่ง server
+│  ├─ csp.ts                 # สร้าง Content-Security-Policy (แหล่งภายนอก: Turnstile, Cloudinary)
 │  ├─ catalog.ts             # ข้อมูลที่ popup ใช้ (ไม่มี prompt)
 │  ├─ optionTypes.ts         # ชนิดตัวเลือก + ขนาดภาพ (ใช้ทั้ง server/client)
 │  ├─ designCode.ts          # สร้าง/ตรวจรูปแบบ designCode
+│  ├─ designHistory.ts       # ประวัติดีไซน์: field ที่ลูกค้าเห็นได้ + จำนวนรูปสูงสุดในเครื่อง (ไม่มี server-only)
 │  ├─ dashboard.ts           # ตัวเลขแดชบอร์ด (aggregate ตามเวลาไทย, นับเฉพาะ success)
 │  └─ validators.ts          # Zod schemas
-├─ models/                   # Admin, Category, Product, Option, Generation
+├─ models/                   # Admin, Customer, Category, Product, Option, Generation
 ├─ components/
-└─ middleware.ts             # กั้น /admin/* และ /api/admin/*
+└─ proxy.ts                  # กั้น /admin/* และ /api/admin/* + ตั้ง CSP (nonce ใหม่ทุก request) ให้ทุกหน้า
 tests/
 ├─ unit/
 └─ e2e/
@@ -144,6 +159,7 @@ tests/
 - ทุกสินค้าต้องมี `refImage` และส่งรูปต้นแบบให้ AI แก้ทุกครั้ง (ไม่สร้างรูปจากศูนย์)
 - ทุกการสร้างรูปต้องมี `designCode` และบันทึกลง `generations` (เก็บแค่ metadata: สินค้า, ตัวเลือก, prompt, สถานะ, cost)
 - รูปที่ลูกค้าสร้าง **ไม่อัปขึ้น Cloudinary และไม่เก็บใน DB** → ส่งกลับเป็น base64 ให้ client แสดง/ดาวน์โหลดเท่านั้น
+  - ข้อยกเว้นเดียว: ลูกค้าที่ล็อกอิน เบราว์เซอร์เก็บรูปใน IndexedDB ของเครื่องตัวเอง (`designHistoryStore.ts`) สำหรับหน้า "ดีไซน์ของฉัน" — ห้ามส่งรูปกลับขึ้น server
 - ใต้รูปผลลัพธ์ต้องแสดง “ภาพจำลอง สินค้าจริงอาจต่างเล็กน้อย”
 - รองรับ dark mode ผ่าน token สีใน `globals.css` (`data-theme` บน <html>) — ห้ามใช้สีตายตัว:
   การ์ด/กล่องใช้ `bg-surface` (ไม่ใช่ `bg-white`), พื้นหลังใต้ popup ใช้ `bg-scrim/…`,
@@ -154,7 +170,8 @@ tests/
 ## กฎความปลอดภัย (OWASP Top 10)
 
 **A01 Broken Access Control**
-- ทุก route ใต้ `/admin/*` และ `/api/admin/*` ต้องเช็ค session ฝั่ง server ทุกครั้ง (middleware อย่างเดียวไม่พอ)
+- ทุก route ใต้ `/admin/*` และ `/api/admin/*` ต้องเช็ค session ฝั่ง server ทุกครั้งด้วย `getAdminSession()` (proxy อย่างเดียวไม่พอ)
+- แอดมินกับลูกค้าใช้ NextAuth ชุดเดียวกัน แยกด้วย `role` ใน JWT — ห้ามเช็คแค่ว่า "มี session" ต้องเช็ค `role === "admin"` เสมอ (ลูกค้าที่ล็อกอิน Google ก็มี session)
 - API public ต้องคืนข้อมูลเฉพาะที่ `active: true` และไม่คืน `finalPrompt`, `ipHash`, `cost`
 
 **A02 Cryptographic Failures**
@@ -173,6 +190,8 @@ tests/
 
 **A05 Security Misconfiguration**
 - ตั้ง security headers: CSP, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`
+  - CSP อยู่ใน `lib/csp.ts` + `proxy.ts` (script ต้องมี nonce — ห้ามเพิ่ม `'unsafe-inline'` ให้ script); header ที่เหลืออยู่ใน `next.config.ts`
+  - เพิ่มบริการภายนอก (script / iframe / รูป / API ที่เบราว์เซอร์เรียกตรง) ต้องเพิ่มโดเมนใน `lib/csp.ts` ด้วย ไม่งั้นถูกบล็อก
 - ไม่ส่ง stack trace หรือ error ดิบกลับไปที่ client
 - Cloudinary: อัปโหลดจากฝั่ง server เท่านั้น (signed upload) ห้ามเปิด unsigned upload preset
 - ตั้ง allowed domain ของรูปใน `next.config` เป็น `res.cloudinary.com` เท่านั้น
@@ -181,7 +200,8 @@ tests/
 - รัน `npm audit` ก่อน release, ไม่ commit dependency ที่มีช่องโหว่ระดับ high/critical
 
 **A07 Authentication Failures**
-- ไม่มีระบบสมัครสมาชิก; เพิ่มแอดมินผ่าน `npm run seed` หรือหน้าแอดมินเท่านั้น
+- แอดมินไม่มีระบบสมัครสมาชิก; เพิ่มแอดมินผ่าน `npm run seed` หรือหน้าแอดมินเท่านั้น — ล็อกอิน Google ได้แค่ role `customer`
+- ลูกค้า Google: รับเฉพาะบัญชีที่ `email_verified`, เก็บแค่ `googleSub` + ชื่อ + อีเมล (ไม่เก็บรูปโปรไฟล์/token ของ Google)
 - ตั้ง session หมดอายุ (เช่น 8 ชม.)
 
 **A08 Software & Data Integrity**
@@ -195,5 +215,5 @@ tests/
 - ห้ามรับ URL รูปจากผู้ใช้ไปดึงฝั่ง server; รูปต้นแบบมาจาก Cloudinary ของเราเท่านั้น
 
 ### Secrets
-- `GEMINI_API_KEY`, `CLOUDFLARE_AI_TOKEN` และ `CLOUDINARY_API_SECRET` ใช้ได้เฉพาะไฟล์ server (`lib/*`, `app/api/*`) ห้ามมี prefix `NEXT_PUBLIC_`
+- `GEMINI_API_KEY`, `CLOUDFLARE_AI_TOKEN`, `GOOGLE_CLIENT_SECRET` และ `CLOUDINARY_API_SECRET` ใช้ได้เฉพาะไฟล์ server (`lib/*`, `app/api/*`) ห้ามมี prefix `NEXT_PUBLIC_`
 - ห้าม commit `.env*` (ยกเว้น `.env.example`)

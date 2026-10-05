@@ -2,8 +2,8 @@ import Link from "next/link";
 import { DesignStudio } from "@/components/public/design/DesignStudio";
 import { FeaturedGrid } from "@/components/public/FeaturedGrid";
 import { ChevronIcon, ImageIcon, SparkleIcon } from "@/components/public/icons";
+import { SiteNav } from "@/components/public/SiteNav";
 import { getProductListing, type DesignCatalog, type ListingProduct } from "@/lib/catalog";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 const FEATURED_COUNT = 8;
 
@@ -13,36 +13,19 @@ export default async function HomePage() {
   const featured = products.slice(0, FEATURED_COUNT);
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] pb-10 lg:pb-20">
-      <Header />
-      <main className="px-6 lg:px-10">
+    <>
+      <SiteNav />
+      <main className="mx-auto w-full max-w-[1200px] px-6 pb-10 lg:px-10 lg:pb-20">
         <Hero catalog={catalog} />
         <FeaturedProducts catalog={catalog} products={featured} />
       </main>
-    </div>
-  );
-}
-
-function Header() {
-  return (
-    <header className="flex items-center justify-between pl-[15px] pr-4 pt-3 lg:px-10 lg:pt-6">
-      <Link href="/" className="flex items-center gap-3">
-        <span className="flex size-[43px] items-center justify-center rounded-full bg-primary text-[15px] font-bold leading-none text-cream">
-          KC
-        </span>
-        <span>
-          <span className="block text-base font-semibold leading-[1.3] text-primary">KalaCraft AI</span>
-          <span className="block text-[11px] leading-[1.3] text-ink-muted">หัตถกรรมกะลามะพร้าว</span>
-        </span>
-      </Link>
-      <ThemeToggle className="flex size-10 shrink-0 items-center justify-center rounded-full bg-beige text-ink transition hover:bg-border/60" />
-    </header>
+    </>
   );
 }
 
 function Hero({ catalog }: { catalog: DesignCatalog }) {
   return (
-    <section className="mt-[27px] flex min-h-[552px] flex-col items-center justify-center rounded-3xl border border-border bg-surface px-6 py-10 text-center shadow-[0_8px_24px_rgba(107,66,38,0.08)] lg:mt-8 lg:grid lg:min-h-0 lg:grid-cols-2 lg:gap-12 lg:px-16 lg:py-16 lg:text-left">
+    <section className="mt-3 flex min-h-[552px] flex-col items-center justify-center rounded-3xl border border-border bg-surface px-6 py-10 text-center shadow-[0_8px_24px_rgba(107,66,38,0.08)] lg:mt-6 lg:grid lg:min-h-0 lg:grid-cols-2 lg:gap-12 lg:px-16 lg:py-16 lg:text-left">
       <div className="lg:flex lg:justify-center">
         <HeroIllustration />
       </div>

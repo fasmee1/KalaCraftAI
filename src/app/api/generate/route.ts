@@ -1,3 +1,4 @@
+import { getCustomerId } from "@/lib/auth";
 import { AiQuotaExceededError } from "@/lib/cloudflareAi";
 import { connectDB } from "@/lib/db";
 import { generateDesignCode } from "@/lib/designCode";
@@ -33,21 +34,22 @@ export async function POST(request: Request) {
 
   await connectDB();
 
-  // 3. rate limit ต่อ IP + งบรายวันทั้งระบบ
+  // 3. rate limit ต่อบัญชี (ล็อกอิน Google) หรือต่อ IP (ไม่ล็อกอิน) + งบรายวันทั้งระบบ
   const ipHash = hashIp(ip);
+  const customerId = await getCustomerId();
   const provider = getAiProvider();
   // มีคำขอพิมพ์เอง → ใช้โมเดลแก้รูปตัวใหญ่ (ทำตามคำขอได้) ซึ่งแพงกว่า — คิดงบตามระดับจริง
   const cleanNote = sanitizeNote(note);
   const level: EditLevel = cleanNote ? "edit" : "restyle";
   const costUsd = estimateCostUsd(provider, level);
-  const limit = await checkGenerateLimits(ipHash, costUsd);
+  const limit = await checkGenerateLimits({ ipHash, customerId }, costUsd);
   if (!limit.ok) {
-    return error(
-      limit.reason === "ip"
-        ? "วันนี้คุณสร้างภาพครบโควตาแล้ว กรุณากลับมาใหม่พรุ่งนี้"
-        : "วันนี้ระบบสร้างภาพครบโควตาแล้ว กรุณากลับมาใหม่พรุ่งนี้",
-      429,
-    );
+    const messages = {
+      ip: "วันนี้คุณสร้างภาพครบโควตาแล้ว เข้าสู่ระบบด้วย Google ที่หน้าแรกเพื่อสร้างได้เพิ่ม หรือกลับมาใหม่พรุ่งนี้",
+      account: "วันนี้คุณสร้างภาพครบโควตาแล้ว กรุณากลับมาใหม่พรุ่งนี้",
+      budget: "วันนี้ระบบสร้างภาพครบโควตาแล้ว กรุณากลับมาใหม่พรุ่งนี้",
+    };
+    return error(messages[limit.reason], 429);
   }
 
   // 4. โหลดสินค้า + ตัวเลือก (ต้อง active ทั้งหมด) — cast id เป็น string กัน NoSQL injection
@@ -90,6 +92,7 @@ export async function POST(request: Request) {
         provider,
         costUsd,
         ipHash,
+        customer: customerId,
       });
     } catch (err) {
       if ((err as { code?: number }).code !== 11000) throw err; // designCode ซ้ำ → สุ่มใหม่

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono, IBM_Plex_Sans_Thai } from "next/font/google";
+import { headers } from "next/headers";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
@@ -27,12 +28,15 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // nonce ของ CSP จาก proxy.ts — script แบบ inline ต้องมี nonce ไม่งั้นเบราว์เซอร์บล็อก
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     // suppressHydrationWarning: script ด้านล่างใส่ data-theme ให้ <html> ก่อน React hydrate
     <html lang="th" className={`${plexThai.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

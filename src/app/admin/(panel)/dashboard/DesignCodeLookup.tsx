@@ -102,6 +102,16 @@ export function DesignCodeLookup({ pick }: { pick: string | null }) {
           <dl className="grid grid-cols-[88px_1fr] gap-x-3 gap-y-2 text-sm">
             <dt className="text-ink-muted">สินค้า</dt>
             <dd className="text-ink">{result.product?.name ?? "สินค้าที่ถูกลบ"}</dd>
+            <dt className="text-ink-muted">ลูกค้า</dt>
+            <dd className="break-all text-ink">
+              {result.customer ? (
+                <>
+                  {result.customer.name || "—"} <span className="text-ink-muted">· {result.customer.email}</span>
+                </>
+              ) : (
+                <span className="text-ink-muted">ไม่ได้เข้าสู่ระบบ</span>
+              )}
+            </dd>
             <dt className="text-ink-muted">สร้างเมื่อ</dt>
             <dd className="text-ink">{dateTime(result.createdAt)}</dd>
             <dt className="text-ink-muted">ส่งให้เพจ</dt>

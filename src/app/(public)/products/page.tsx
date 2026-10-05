@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SiteNav } from "@/components/public/SiteNav";
 import { getProductListing } from "@/lib/catalog";
 import { ProductsBrowser } from "./ProductsBrowser";
 import { SORTS, type SortValue } from "./sorts";
@@ -24,5 +25,10 @@ export default async function ProductsPage(props: PageProps<"/products">) {
     productId: first(params.product) ?? null,
   };
 
-  return <ProductsBrowser catalog={catalog} products={products} initial={initial} />;
+  return (
+    <>
+      <SiteNav />
+      <ProductsBrowser catalog={catalog} products={products} initial={initial} />
+    </>
+  );
 }

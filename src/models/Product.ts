@@ -1,4 +1,5 @@
-import { Schema, model, models, type InferSchemaType, type Model } from "mongoose";
+import { Schema, type InferSchemaType } from "mongoose";
+import { defineModel } from "./defineModel";
 
 const RefImageSchema = new Schema(
   {
@@ -29,4 +30,4 @@ const ProductSchema = new Schema(
 
 export type ProductDoc = InferSchemaType<typeof ProductSchema>;
 
-export const Product: Model<ProductDoc> = models.Product || model<ProductDoc>("Product", ProductSchema);
+export const Product = defineModel<ProductDoc>("Product", ProductSchema);

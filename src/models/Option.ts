@@ -1,4 +1,5 @@
-import { Schema, model, models, type InferSchemaType, type Model } from "mongoose";
+import { Schema, type InferSchemaType } from "mongoose";
+import { defineModel } from "./defineModel";
 import { OPTION_TYPE_KEYS, PATTERN_PREVIEWS } from "@/lib/optionTypes";
 
 // ตัวเลือกดีไซน์ (สไตล์/โทนสี/ลวดลาย ฯลฯ) — promptText เป็นภาษาอังกฤษที่ส่งให้ AI, ลูกค้าเห็นแค่ label
@@ -19,4 +20,4 @@ const OptionSchema = new Schema(
 
 export type OptionDoc = InferSchemaType<typeof OptionSchema>;
 
-export const Option: Model<OptionDoc> = models.Option || model<OptionDoc>("Option", OptionSchema);
+export const Option = defineModel<OptionDoc>("Option", OptionSchema);

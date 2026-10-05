@@ -1,7 +1,6 @@
 "use client";
 
-import { Check, ChevronDown, ChevronLeft, PackageSearch, Search, SlidersHorizontal, X } from "lucide-react";
-import Link from "next/link";
+import { Check, ChevronDown, PackageSearch, Search, SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { DesignStudio, type DesignPreselect } from "@/components/public/design/DesignStudio";
 import { ProductCard } from "@/components/public/ProductCard";
@@ -9,7 +8,6 @@ import { ProductModal } from "@/components/public/ProductModal";
 import { useSmoothClose } from "@/components/public/useSmoothClose";
 import type { DesignCatalog, ListingProduct } from "@/lib/catalog";
 import { SORTS, type SortValue } from "./sorts";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 
 const PRICE_RANGES = [
@@ -77,22 +75,12 @@ export function ProductsBrowser({
   };
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] px-6 pb-32 pt-3.5 lg:px-10 lg:pt-8">
+    <div className="mx-auto w-full max-w-[1200px] px-6 pb-32 pt-3 lg:px-10 lg:pt-6">
       {/* หัวหน้า */}
-      <header className="relative flex h-10 items-center justify-center lg:justify-start lg:gap-4">
-        <Link
-          href="/"
-          aria-label="กลับหน้าแรก"
-          className="absolute left-0 flex size-10 items-center justify-center rounded-full bg-beige text-ink transition hover:bg-border/60 lg:static"
-        >
-          <ChevronLeft size={22} />
-        </Link>
-        <h1 className="text-lg font-bold text-primary lg:text-[28px]">สินค้าแนะนำ</h1>
-        <ThemeToggle className="flex size-10 shrink-0 items-center justify-center rounded-full bg-beige text-ink transition hover:bg-border/60 absolute right-0 lg:static lg:ml-auto" />
-      </header>
+      <h1 className="text-xl font-bold text-primary lg:text-[28px]">สินค้าแนะนำ</h1>
 
       {/* ค้นหา + ตัวกรอง */}
-      <div className="mt-6 flex gap-2.5 lg:mt-8 lg:max-w-xl">
+      <div className="mt-4 flex gap-2.5 lg:mt-8 lg:max-w-xl">
         <label className="relative flex-1">
           <span className="sr-only">ค้นหาสินค้า</span>
           <Search size={20} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-muted" aria-hidden />

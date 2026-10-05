@@ -1,9 +1,11 @@
 "use client";
 
 import type { AspectRatioValue, DesignSelection } from "./DesignForm";
+import { rememberDesign } from "./designHistoryStore";
 
 // ภาพผลลัพธ์อยู่แค่ในแท็บนี้ (memory + sessionStorage) — ไม่อัปขึ้น server/Cloudinary/DB
 // sessionStorage ช่วยให้รีเฟรชหน้าผลลัพธ์แล้วภาพไม่หาย แต่ปิดแท็บแล้วหายตามที่ตั้งใจ
+// ลูกค้าที่ล็อกอิน: เก็บสำเนาไว้ใน IndexedDB ของเครื่องด้วย เพื่อดูในหน้า "ดีไซน์ของฉัน"
 
 export type StoredDesign = {
   designCode: string;
@@ -29,6 +31,7 @@ export function saveDesign(design: StoredDesign) {
   } catch {
     // พื้นที่เต็ม/โหมดส่วนตัว — ยังใช้จาก memory ได้ระหว่างอยู่ในแท็บนี้
   }
+  void rememberDesign(design);
 }
 
 export function loadDesign(): StoredDesign | null {

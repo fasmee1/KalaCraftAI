@@ -1,4 +1,5 @@
-import { Schema, model, models, type InferSchemaType, type Model } from "mongoose";
+import { Schema, type InferSchemaType } from "mongoose";
+import { defineModel } from "./defineModel";
 
 // ประวัติการสร้างดีไซน์ — เก็บเฉพาะ metadata ไม่เก็บรูปผลลัพธ์
 const GenerationSchema = new Schema(
@@ -18,15 +19,17 @@ const GenerationSchema = new Schema(
     error: { type: String, default: null },
     // SHA-256(IP + salt) — ห้ามเก็บ IP ดิบ
     ipHash: { type: String, required: true },
+    // ลูกค้าที่ล็อกอินด้วย Google ตอนสร้าง — null = ไม่ได้ล็อกอิน
+    customer: { type: Schema.Types.ObjectId, ref: "Customer", default: null },
     sentToPageAt: { type: Date, default: null },
   },
   { timestamps: true },
 );
 
 GenerationSchema.index({ ipHash: 1, createdAt: -1 });
+GenerationSchema.index({ customer: 1, createdAt: -1 });
 GenerationSchema.index({ createdAt: -1, status: 1 });
 
 export type GenerationDoc = InferSchemaType<typeof GenerationSchema>;
 
-export const Generation: Model<GenerationDoc> =
-  models.Generation || model<GenerationDoc>("Generation", GenerationSchema);
+export const Generation = defineModel<GenerationDoc>("Generation", GenerationSchema);
