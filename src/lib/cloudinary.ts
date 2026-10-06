@@ -2,7 +2,7 @@ import "server-only";
 import { v2 as cloudinary, type UploadApiResponse } from "cloudinary";
 
 // เก็บเฉพาะรูปต้นแบบสินค้า (refImage) — รูปผลลัพธ์ของลูกค้าไม่อัปโหลดขึ้น Cloudinary
-// รูปทุกไฟล์อัปโหลดแบบ authenticated (ไม่ public) และเปิดดูได้ผ่าน signed URL ที่หมดอายุเท่านั้น
+// รูปทุกไฟล์อัปโหลดแบบ authenticated (ไม่ public) — เบราว์เซอร์ดูได้ผ่าน /api/images/[id] ของเราเท่านั้น
 const DELIVERY_TYPE = "authenticated";
 const SUBFOLDER = "references";
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -77,16 +77,6 @@ export async function uploadReferenceImage(buf: Buffer): Promise<StoredImage> {
     width: res.width,
     height: res.height,
   };
-}
-
-/** URL สำหรับดาวน์โหลดรูปที่หมดอายุตามเวลาที่กำหนด (ค่าเริ่มต้น 5 นาที) */
-export function signedImageUrl(publicId: string, format: string, expiresInSeconds = 300): string {
-  ensureConfigured();
-  return cloudinary.utils.private_download_url(publicId, format, {
-    type: DELIVERY_TYPE,
-    resource_type: "image",
-    expires_at: Math.floor(Date.now() / 1000) + expiresInSeconds,
-  });
 }
 
 /**
