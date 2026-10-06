@@ -12,7 +12,8 @@ export function buildCsp(nonce: string, isDev: boolean): string {
     // style="…" ของ React (สี swatch ฯลฯ) ใส่ nonce ไม่ได้
     "style-src 'self' 'unsafe-inline'",
     // blob: = รูปใน IndexedDB/พรีวิวอัปโหลด, data: = รูปผลลัพธ์ base64
-    "img-src 'self' blob: data: https://res.cloudinary.com",
+    // api.cloudinary.com = signed download URL ที่ /api/images/[id] redirect ไป — CSP ตรวจปลายทางของ redirect ด้วย
+    "img-src 'self' blob: data: https://res.cloudinary.com https://api.cloudinary.com",
     "font-src 'self'",
     `connect-src 'self'${isDev ? " ws:" : ""}`,
     `frame-src ${TURNSTILE}`,

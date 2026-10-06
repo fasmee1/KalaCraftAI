@@ -29,7 +29,10 @@ describe("buildCsp", () => {
 
   it("allows the image sources the site really uses", () => {
     const images = directive(prod, "img-src")!;
-    for (const source of ["'self'", "blob:", "data:", "https://res.cloudinary.com"]) expect(images).toContain(source);
+    // api.cloudinary.com = signed download URL ที่ /api/images/[id] redirect ไป (CSP ตรวจปลายทางของ redirect ด้วย)
+    for (const source of ["'self'", "blob:", "data:", "https://res.cloudinary.com", "https://api.cloudinary.com"]) {
+      expect(images).toContain(source);
+    }
   });
 
   it("allows the Turnstile frame and nothing else to embed or be embedded", () => {
