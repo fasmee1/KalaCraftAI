@@ -11,7 +11,7 @@ export function buildCsp(nonce: string, isDev: boolean): string {
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""} ${TURNSTILE}`,
     // style="…" ของ React (สี swatch ฯลฯ) ใส่ nonce ไม่ได้
     "style-src 'self' 'unsafe-inline'",
-    // blob: = รูปใน IndexedDB/พรีวิวอัปโหลด, data: = รูปผลลัพธ์ base64
+    // blob: = พรีวิวอัปโหลดของแอดมิน, data: = รูปผลลัพธ์ base64
     "img-src 'self' blob: data: https://res.cloudinary.com",
     "font-src 'self'",
     `connect-src 'self'${isDev ? " ws:" : ""}`,

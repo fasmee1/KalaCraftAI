@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_SAVED_IMAGE_BASE64 } from "./designHistory";
 import { ASPECT_RATIOS, NOTE_MAX_LENGTH, OPTION_TYPE_KEYS, PATTERN_PREVIEWS, type OptionType } from "./optionTypes";
 
 type AspectRatioValue = (typeof ASPECT_RATIOS)[number]["value"];
@@ -101,6 +102,15 @@ export const generateSchema = z.object({
 export type GenerateInput = z.infer<typeof generateSchema>;
 
 /** body ของ POST /api/me/favorites — เพิ่ม/เอาสินค้าออกจากรายการโปรดของลูกค้าที่ล็อกอิน */
+/** รูปที่ลูกค้าส่งกลับมาบันทึกลงประวัติ — เนื้อรูปตรวจด้วย hash ใน lib/designImage.ts */
+export const saveDesignImageSchema = z.object({
+  imageBase64: z
+    .string()
+    .min(1)
+    .max(MAX_SAVED_IMAGE_BASE64)
+    .regex(/^[A-Za-z0-9+/]+={0,2}$/),
+});
+
 export const favoriteSchema = z.object({ productId: objectIdSchema, favorite: z.boolean() });
 
 /** ตัวเลือกดีไซน์ (แอดมิน) — swatch ใช้กับโทนสี, preview ใช้กับลวดลาย ชนิดอื่นจะถูกล้างเป็น null */

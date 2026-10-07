@@ -1,7 +1,17 @@
 import { Schema, type InferSchemaType } from "mongoose";
 import { defineModel } from "./defineModel";
 
-// ประวัติการสร้างดีไซน์ — เก็บเฉพาะ metadata ไม่เก็บรูปผลลัพธ์
+// ประวัติการสร้างดีไซน์ — เก็บ metadata; รูปผลลัพธ์เก็บเฉพาะเมื่อลูกค้าที่ล็อกอินกด "บันทึกลงประวัติ" (อยู่บน Cloudinary)
+const SavedImageSchema = new Schema(
+  {
+    publicId: { type: String, required: true },
+    bytes: { type: Number, default: 0 },
+    width: { type: Number, default: 0 },
+    height: { type: Number, default: 0 },
+  },
+  { _id: false },
+);
+
 const GenerationSchema = new Schema(
   {
     designCode: { type: String, required: true, unique: true },
@@ -22,6 +32,10 @@ const GenerationSchema = new Schema(
     // ลูกค้าที่ล็อกอินด้วย Google ตอนสร้าง — null = ไม่ได้ล็อกอิน
     customer: { type: Schema.Types.ObjectId, ref: "Customer", default: null },
     sentToPageAt: { type: Date, default: null },
+    // SHA-256 ของรูปที่ AI สร้าง — ใช้ยืนยันรูปที่ลูกค้าส่งกลับมาบันทึก (lib/designImage.ts)
+    imageHash: { type: String, default: null },
+    savedImage: { type: SavedImageSchema, default: null },
+    savedAt: { type: Date, default: null },
   },
   { timestamps: true },
 );

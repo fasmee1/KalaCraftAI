@@ -1,9 +1,8 @@
 "use client";
 
-import { Check, Download, ImageOff, MessageCircle, Sparkles, Trash2, X } from "lucide-react";
+import { Check, Download, MessageCircle, Sparkles, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { listLocalImages, removeLocalImages, type LocalImage } from "./designHistoryStore";
 import { saveFile } from "./imageDownload";
 import { useSmoothClose } from "../useSmoothClose";
 import { SkeletonImage } from "@/components/SkeletonImage";
@@ -11,25 +10,19 @@ import type { HistoryItem } from "@/lib/designHistory";
 
 const FB_PAGE = process.env.NEXT_PUBLIC_FB_PAGE;
 
-type LocalEntry = LocalImage & { url: string };
 type State =
   | { status: "loading" }
   | { status: "signed-out" }
   | { status: "error" }
   | { status: "ready"; items: HistoryItem[] };
 
-function fileExt(mimeType: string) {
-  return mimeType === "image/jpeg" ? "jpg" : (mimeType.split("/")[1] ?? "png");
-}
-
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" });
 }
 
-/** หน้า "ดีไซน์ของฉัน" — รายการจาก server (metadata) จับคู่กับรูปที่เก็บในเครื่องนี้ด้วย designCode */
+/** หน้า "ดีไซน์ของฉัน" — เฉพาะดีไซน์ที่ลูกค้ากด "บันทึกลงประวัติ" ตอนสร้างเสร็จ */
 export function DesignHistoryView() {
   const [state, setState] = useState<State>({ status: "loading" });
-  const [local, setLocal] = useState<Record<string, LocalEntry>>({});
   const [toast, setToast] = useState<string | null>(null);
   // รูปที่เปิดเต็มจอ — manual = พร้อมวิธีบันทึกเอง (เบราว์เซอร์ที่ดาวน์โหลดไม่ได้)
   const [viewing, setViewing] = useState<{ code: string; manual: boolean } | null>(null);
@@ -37,7 +30,6 @@ export function DesignHistoryView() {
 
   useEffect(() => {
     let alive = true;
-    const urls: string[] = [];
 
     (async () => {
       const res = await fetch("/api/me/generations", { cache: "no-store" }).catch(() => null);
@@ -46,29 +38,16 @@ export function DesignHistoryView() {
       const data = res?.ok ? await res.json().catch(() => null) : null;
       if (!alive) return;
       if (!data?.items) return setState({ status: "error" });
-      const items = data.items as HistoryItem[];
-      setState({ status: "ready", items });
-
-      const codes = new Set(items.map((i) => i.designCode));
-      const images = await listLocalImages();
-      // รูปที่ไม่อยู่ในรายการของบัญชีนี้ (บัญชีอื่นที่เคยใช้เครื่องนี้ / เก่าเกินรายการ) → ลบทิ้ง
-      const orphans = images.filter((img) => !codes.has(img.designCode)).map((img) => img.designCode);
-      if (orphans.length) void removeLocalImages(orphans);
-      if (!alive) return;
-
-      const entries: Record<string, LocalEntry> = {};
-      for (const img of images) {
-        if (!codes.has(img.designCode)) continue;
-        const url = URL.createObjectURL(img.blob);
-        urls.push(url);
-        entries[img.designCode] = { ...img, url };
-      }
-      setLocal(entries);
+      setState({ status: "ready", items: data.items as HistoryItem[] });
     })();
+
+    // รุ่นก่อนเก็บรูปใน IndexedDB ของเครื่อง — ล้างของเก่าทิ้ง
+    try {
+      indexedDB.deleteDatabase("kc-design-history");
+    } catch {}
 
     return () => {
       alive = false;
-      urls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, []);
 
@@ -85,16 +64,18 @@ export function DesignHistoryView() {
     return () => window.removeEventListener("keydown", onKey);
   }, [viewing, requestClose]);
 
-  const download = async (entry: LocalEntry) => {
-    // สร้างไฟล์แบบ sync แล้วบันทึกทันที — iOS เปิดเมนูแชร์ได้เฉพาะในจังหวะที่ผู้ใช้เพิ่งกด
-    const fileName = `${entry.designCode}.${fileExt(entry.mimeType)}`;
+  const download = async (item: HistoryItem) => {
+    const fileName = `${item.designCode}.jpg`;
     try {
-      const result = await saveFile(new File([entry.blob], fileName, { type: entry.mimeType }));
-      if (result === "manual") setViewing({ code: entry.designCode, manual: true });
+      const res = await fetch(`${item.imageUrl}&download=1`);
+      if (!res.ok) throw new Error("download failed");
+      const result = await saveFile(new File([await res.blob()], fileName, { type: "image/jpeg" }));
+      if (result === "manual") setViewing({ code: item.designCode, manual: true });
       else if (result === "downloaded") setToast(`ดาวน์โหลด ${fileName} แล้ว`);
       else if (result === "downloaded-android") setToast("บันทึกแล้ว · ดูได้ในแกลเลอรี / Google Photos อัลบั้ม Download");
     } catch {
-      setViewing({ code: entry.designCode, manual: true });
+      // ดาวน์โหลดไม่ได้ (เช่น iOS ไม่ยอมเปิดเมนูแชร์หลังรอโหลดไฟล์) → ให้บันทึกจากรูปโดยตรง
+      setViewing({ code: item.designCode, manual: true });
     }
   };
 
@@ -114,18 +95,20 @@ export function DesignHistoryView() {
     window.open(`https://m.me/${encodeURIComponent(FB_PAGE ?? "")}`, "_blank", "noopener,noreferrer");
   };
 
-  const removeImage = async (entry: LocalEntry) => {
-    await removeLocalImages([entry.designCode]);
-    URL.revokeObjectURL(entry.url);
-    setLocal((prev) => {
-      const next = { ...prev };
-      delete next[entry.designCode];
-      return next;
-    });
-    setToast("ลบรูปออกจากเครื่องนี้แล้ว");
+  const removeImage = async (item: HistoryItem) => {
+    const res = await fetch(`/api/me/generations/${encodeURIComponent(item.designCode)}/image`, { method: "DELETE" }).catch(
+      () => null,
+    );
+    if (!res?.ok) return setToast("ลบรูปไม่สำเร็จ กรุณาลองใหม่");
+    setState((s) =>
+      s.status === "ready"
+        ? { ...s, items: s.items.filter((i) => i.designCode !== item.designCode) }
+        : s,
+    );
+    setToast("ลบออกจากประวัติแล้ว");
   };
 
-  const viewed = viewing ? local[viewing.code] : undefined;
+  const viewed = viewing && state.status === "ready" ? state.items.find((i) => i.designCode === viewing.code) : undefined;
 
   return (
     <div className="mx-auto w-full max-w-[1200px] px-4 pb-16 pt-3 lg:px-10 lg:pt-6">
@@ -145,40 +128,31 @@ export function DesignHistoryView() {
         )}
         {state.status === "error" && <Notice title="โหลดประวัติไม่สำเร็จ" text="กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง" />}
         {state.status === "ready" && state.items.length === 0 && (
-          <Notice title="ยังไม่มีดีไซน์" text="ดีไซน์ที่คุณสร้างขณะเข้าสู่ระบบจะแสดงที่นี่" />
+          <Notice title="ยังไม่มีดีไซน์ที่บันทึกไว้" text="สร้างดีไซน์เสร็จแล้วกด “บันทึกลงประวัติ” ดีไซน์นั้นจะแสดงที่นี่" />
         )}
 
         {state.status === "ready" && state.items.length > 0 && (
           <>
             <p className="mb-3 text-xs leading-relaxed text-ink-muted lg:mb-5 lg:text-sm">
-              รูปเก็บอยู่ในเบราว์เซอร์ของเครื่องนี้เท่านั้น · ภาพจำลอง สินค้าจริงอาจต่างเล็กน้อย
+              แสดงเฉพาะดีไซน์ที่กด “บันทึกลงประวัติ” ไว้ · ภาพจำลอง สินค้าจริงอาจต่างเล็กน้อย
             </p>
             <ul className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-5">
-              {state.items.map((item) => {
-                const entry = local[item.designCode];
-                return (
+              {state.items.map((item) => (
                   <li key={item.designCode} className="flex flex-col overflow-hidden rounded-2xl border border-border bg-surface">
                     <div className="relative aspect-square bg-beige">
-                      {entry ? (
-                        <button
-                          type="button"
-                          onClick={() => setViewing({ code: item.designCode, manual: false })}
-                          aria-label={`ดูภาพเต็มจอ ${item.designCode}`}
-                          className="absolute inset-0"
-                        >
-                          <SkeletonImage src={entry.url} alt={`ดีไซน์ ${item.designCode}`} className="size-full object-cover" />
-                        </button>
-                      ) : (
-                        <>
-                          {item.product && (
-                            <SkeletonImage src={item.product.imageUrl} alt="" loading="lazy" className="size-full object-cover opacity-40" />
-                          )}
-                          <span className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-3 text-center text-xs font-medium text-ink">
-                            <ImageOff size={20} aria-hidden />
-                            รูปไม่ได้อยู่ในเครื่องนี้
-                          </span>
-                        </>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => setViewing({ code: item.designCode, manual: false })}
+                        aria-label={`ดูภาพเต็มจอ ${item.designCode}`}
+                        className="absolute inset-0"
+                      >
+                        <SkeletonImage
+                          src={item.imageUrl}
+                          alt={`ดีไซน์ ${item.designCode}`}
+                          loading="lazy"
+                          className="size-full object-cover"
+                        />
+                      </button>
                       {item.sentToPage && (
                         <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-surface/90 px-2 py-0.5 text-[11px] font-medium text-secondary">
                           <Check size={12} strokeWidth={2.5} /> ส่งให้เพจแล้ว
@@ -209,21 +183,16 @@ export function DesignHistoryView() {
                           <MessageCircle size={15} aria-hidden />
                           ส่งให้เพจ
                         </button>
-                        {entry && (
-                          <>
-                            <IconButton label="ดาวน์โหลดภาพ" onClick={() => download(entry)}>
-                              <Download size={16} />
-                            </IconButton>
-                            <IconButton label="ลบรูปออกจากเครื่องนี้" onClick={() => removeImage(entry)}>
-                              <Trash2 size={16} />
-                            </IconButton>
-                          </>
-                        )}
+                        <IconButton label="ดาวน์โหลดภาพ" onClick={() => download(item)}>
+                          <Download size={16} />
+                        </IconButton>
+                        <IconButton label="ลบออกจากประวัติ" onClick={() => removeImage(item)}>
+                          <Trash2 size={16} />
+                        </IconButton>
                       </div>
                     </div>
                   </li>
-                );
-              })}
+              ))}
             </ul>
           </>
         )}
@@ -255,9 +224,9 @@ export function DesignHistoryView() {
             </p>
           )}
           {/* กดที่รูปไม่ปิดหน้าต่าง — ให้กดค้างเพื่อบันทึกได้ */}
-          {/* eslint-disable-next-line @next/next/no-img-element -- รูป blob จาก IndexedDB */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- รูปส่วนตัวผ่าน /api/me ไม่ผ่าน next/image optimizer */}
           <img
-            src={viewed.url}
+            src={viewed.imageUrl}
             alt={`ดีไซน์ ${viewed.designCode}`}
             onClick={(e) => e.stopPropagation()}
             className="zoom-anim min-h-0 max-w-full flex-1 rounded-2xl object-contain"

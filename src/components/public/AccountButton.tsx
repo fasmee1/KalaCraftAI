@@ -4,7 +4,6 @@ import { Images, LayoutDashboard, LogOut, User } from "lucide-react";
 import Link from "next/link";
 import { getProviders, signIn, signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { clearLocalImages } from "./design/designHistoryStore";
 
 const BUTTON =
   "flex size-10 shrink-0 items-center justify-center rounded-full bg-beige text-ink transition hover:bg-border/60";
@@ -86,7 +85,7 @@ export function AccountMenu() {
                 <button
                   type="button"
                   // ลบรูปที่เก็บในเครื่องก่อน — กันคนถัดไปที่ใช้เครื่องเดียวกันเห็นรูป
-                  onClick={() => void clearLocalImages().then(() => signOut({ callbackUrl: "/" }))}
+                  onClick={() => void signOut({ callbackUrl: "/" })}
                   className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-sm font-medium text-ink transition hover:bg-beige"
                 >
                   <LogOut className="size-4" aria-hidden />

@@ -1,8 +1,12 @@
 // ประวัติดีไซน์ของลูกค้าที่ล็อกอิน — ใช้ทั้ง server (API) และ client (ไม่มี server-only)
-// server เก็บแค่ metadata; รูปผลลัพธ์อยู่ใน IndexedDB ของเบราว์เซอร์ลูกค้าเท่านั้น
+// ประวัติมีเฉพาะดีไซน์ที่ลูกค้ากด "บันทึกลงประวัติ" — รูปดูผ่าน /api/me/generations/[code]/image
 
-/** จำนวนรายการล่าสุดที่แสดง และจำนวนรูปสูงสุดที่เก็บในเครื่องลูกค้า */
+/** จำนวนดีไซน์ที่บันทึกไว้ได้ต่อบัญชี — บันทึกเกินแล้วรูปของรายการเก่าสุดถูกลบ (lib/savedDesigns.ts) */
 export const HISTORY_LIMIT = 50;
+
+/** ขนาดรูปสูงสุดที่รับบันทึก และความยาว base64 ของรูปขนาดนั้น */
+export const MAX_SAVED_IMAGE_BYTES = 4 * 1024 * 1024;
+export const MAX_SAVED_IMAGE_BASE64 = Math.ceil(MAX_SAVED_IMAGE_BYTES / 3) * 4;
 
 export type HistoryItem = {
   designCode: string;
@@ -12,6 +16,7 @@ export type HistoryItem = {
   /** null = สินค้าถูกลบไปแล้ว */
   product: { name: string; imageUrl: string } | null;
   labels: string[];
+  imageUrl: string;
 };
 
 type PopulatedGeneration = {
@@ -21,9 +26,10 @@ type PopulatedGeneration = {
   sentToPageAt?: Date | null;
   product: { _id: unknown; name: string; refImage?: { publicId?: string | null } | null } | null;
   options: ({ label: string } | null)[];
+  savedImage: { publicId: string };
 };
 
-/** เลือกเฉพาะ field ที่ลูกค้าเห็นได้ — ไม่มี finalPrompt, ipHash, cost */
+/** เลือกเฉพาะ field ที่ลูกค้าเห็นได้ — ไม่มี finalPrompt, ipHash, cost, publicId ของรูป */
 export function toHistoryItem(doc: PopulatedGeneration): HistoryItem {
   const { product } = doc;
   return {
@@ -38,14 +44,7 @@ export function toHistoryItem(doc: PopulatedGeneration): HistoryItem {
         }
       : null,
     labels: doc.options.flatMap((o) => (o ? [o.label] : [])),
+    // v = กัน cache รูปเก่าถ้าลบแล้วบันทึกใหม่
+    imageUrl: `/api/me/generations/${doc.designCode}/image?v=${doc.savedImage.publicId.split("/").pop()}`,
   };
-}
-
-/** รหัสของรูปที่ต้องลบออกจากเครื่องเมื่อเกินจำนวนสูงสุด — ลบจากเก่าสุด */
-export function evictionCodes(entries: { designCode: string; createdAt: number }[], max = HISTORY_LIMIT): string[] {
-  if (entries.length <= max) return [];
-  return [...entries]
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .slice(max)
-    .map((e) => e.designCode);
 }

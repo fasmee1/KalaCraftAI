@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-// รายการมาจาก /api/me/generations (ต้องล็อกอิน) — รูปผลลัพธ์มาจาก IndexedDB ของเครื่องนี้
+// รายการมาจาก /api/me/generations (ต้องล็อกอิน) — รูปมีเฉพาะดีไซน์ที่ลูกค้ากดบันทึกลงประวัติ
 export default function DesignHistoryPage() {
   return (
     <>

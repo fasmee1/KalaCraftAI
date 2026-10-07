@@ -4,7 +4,7 @@
 - ลูกค้า: ไม่ต้องล็อกอิน (ล็อกอินด้วย Google ได้ถ้าต้องการโควตาต่อวันมากขึ้น) → เลือกสินค้า + ตัวเลือก → AI แก้รูปต้นแบบ (image edit) → ดาวน์โหลด / ส่งรหัสดีไซน์ให้เพจ
 - แอดมิน: ล็อกอิน → Dashboard, CRUD ประเภทสินค้า / สินค้า / ตัวเลือก
 
-Stack: Next.js (App Router, TypeScript) · MongoDB (Mongoose) · AI แก้รูปแบบ image-to-image: Cloudflare Workers AI (`flux-2-klein-4b`, ค่าเริ่มต้น, โควตาฟรีรายวัน) หรือ Google Gemini (Nano Banana — `gemini-2.5-flash-image`, เสียเงิน) เลือกด้วย `AI_PROVIDER` · Cloudinary (เก็บรูปต้นแบบสินค้าเท่านั้น) · NextAuth (Credentials สำหรับแอดมิน, Google สำหรับลูกค้า)
+Stack: Next.js (App Router, TypeScript) · MongoDB (Mongoose) · AI แก้รูปแบบ image-to-image: Cloudflare Workers AI (`flux-2-klein-4b`, ค่าเริ่มต้น, โควตาฟรีรายวัน) หรือ Google Gemini (Nano Banana — `gemini-2.5-flash-image`, เสียเงิน) เลือกด้วย `AI_PROVIDER` · Cloudinary (รูปต้นแบบสินค้า + รูปผลลัพธ์ที่ลูกค้าที่ล็อกอินกดบันทึก) · NextAuth (Credentials สำหรับแอดมิน, Google สำหรับลูกค้า)
 
 ---
 
@@ -15,13 +15,15 @@ Stack: Next.js (App Router, TypeScript) · MongoDB (Mongoose) · AI แก้ร
 ```
 หน้าแรก → เลือกประเภท → เลือกสินค้า → เลือกตัวเลือก (สไตล์/ลาย/สี/ข้อความสลัก)
 → ผ่าน Turnstile → กด "สร้างดีไซน์" → รอ (แสดง loading)
-→ เห็นรูป + ข้อความ "ภาพจำลอง…" + เตือน "ดาวน์โหลดก่อนออกจากหน้านี้" (ไม่แสดง designCode บนหน้า — ปุ่ม "ส่งให้เพจ" คัดลอกให้เอง)
+→ เห็นรูป + ข้อความ "ภาพจำลอง…" + เตือนให้เก็บรูปก่อนออกจากหน้านี้ (ไม่แสดง designCode บนหน้า — ปุ่ม "ส่งให้เพจ" คัดลอกให้เอง)
+→ [บันทึกลงประวัติ] เฉพาะลูกค้าที่ล็อกอิน = อัปรูปขึ้น Cloudinary ผูกกับบัญชี
 → [ดาวน์โหลด]  [ส่งให้เพจ] = คัดลอก designCode + เปิด m.me/<NEXT_PUBLIC_FB_PAGE>
 → ลูกค้าแนบรูปเองในแชท
 ```
 
 ปุ่มบัญชีบน header (หน้าแรก, หน้าสินค้า) → "เข้าสู่ระบบด้วย Google" → ได้ role `customer` + โควตาต่อวันมากขึ้น (นับต่อบัญชี)
-ลูกค้าที่ล็อกอิน → เมนูบัญชี → "ดีไซน์ของฉัน" (`/designs`): รายการดีไซน์ที่เคยสร้าง (metadata จาก server) + รูปผลลัพธ์ที่เก็บใน IndexedDB ของเครื่องนั้น (สูงสุด 50 รูป, ออกจากระบบ = ลบรูปในเครื่อง, เครื่องอื่นไม่เห็นรูป)
+ลูกค้าที่ล็อกอิน → เมนูบัญชี → "ดีไซน์ของฉัน" (`/designs`): แสดงเฉพาะดีไซน์ที่กด "บันทึกลงประวัติ" ตอนสร้างเสร็จ (รูปเก็บบน Cloudinary เห็นได้ทุกเครื่อง, ลบเองได้, เก็บได้ 50 รายการล่าสุด — เกินแล้วรูปของรายการเก่าสุดถูกลบอัตโนมัติ)
+ออกจากหน้าผลลัพธ์ (ลิงก์ในหน้า / สร้างใหม่ / ปุ่มย้อนกลับ / ปิดแท็บ) ขณะรูปยังไม่ถูกบันทึกและยังไม่ได้ดาวน์โหลด → popup เตือน (`UnsavedDesignPrompt`; ปิดแท็บ/รีเฟรชเป็นกล่องเตือนของเบราว์เซอร์)
 ลูกค้าที่ล็อกอิน → กดหัวใจบนการ์ดสินค้า = เก็บเข้า "รายการโปรด" (`/favorites`, ผูกกับบัญชีใน `customers.favorites`) — ไม่ล็อกอินกดหัวใจแล้วขึ้นชวนเข้าสู่ระบบ
 แถบเมนูบน (`SiteNav`) ใช้ในหน้าแรก / สินค้า / รายการโปรด / ดีไซน์ของฉัน
 หน้าผลลัพธ์ไม่มีปุ่มล็อกอิน เพราะการเด้งไป Google ทำให้รูปที่เพิ่งสร้างหาย
@@ -34,10 +36,15 @@ Stack: Next.js (App Router, TypeScript) · MongoDB (Mongoose) · AI แก้ร
 4. โหลด product + options จาก DB (ต้อง `active: true`)
 5. ประกอบ prompt ใน `lib/prompt.ts` (basePrompt + promptText + `note` ที่ sanitize แล้ว)
 6. ดึง `refImage` จาก Cloudinary → ส่งรูป + prompt ให้ AI (`editReferenceImage` ใน `lib/imageAi.ts`)
-7. บันทึก `generations` เป็น `pending` ก่อนเรียก AI (metadata เท่านั้น, ไม่มีรูป) + สร้าง `designCode` (`KC-XXXXXX`) แล้วอัปเดตเป็น `success`/`failed`
-8. คืน `{ designCode, imageBase64 }` → **รูปไม่ถูกเก็บบน server เลย** (ลูกค้าที่ล็อกอิน: เบราว์เซอร์เก็บสำเนาใน IndexedDB ของเครื่องเอง)
+7. บันทึก `generations` เป็น `pending` ก่อนเรียก AI (metadata เท่านั้น, ไม่มีรูป) + สร้าง `designCode` (`KC-XXXXXX`) แล้วอัปเดตเป็น `success`/`failed` + จด `imageHash` (SHA-256 ของรูป)
+8. คืน `{ designCode, imageBase64 }` → **server ยังไม่เก็บรูป** จนกว่าลูกค้าที่ล็อกอินจะกด "บันทึกลงประวัติ"
 
 error จาก AI (รวมถึงถูก safety filter บล็อก หรือโควตาฟรีรายวันหมด) → บันทึก `status: failed`, ไม่นับโควตาลูกค้า, คืนข้อความทั่วไป
+
+### `POST /api/me/generations/[code]/image` (บันทึกลงประวัติ)
+
+ต้องล็อกอินเป็นลูกค้า + ดีไซน์เป็นของบัญชีนั้น → เบราว์เซอร์ส่งรูปกลับมา → รับเฉพาะรูปที่ SHA-256 ตรงกับ `imageHash` (`lib/designImage.ts`) → อัปขึ้น Cloudinary โฟลเดอร์ `designs` แบบ authenticated → เก็บ `savedImage` ใน `generations`
+`GET` = ส่งรูปให้เจ้าของบัญชีเท่านั้น (ผ่าน origin ของเรา, `Cache-Control: private`) · `DELETE` = เจ้าของลบรูป
 
 ### แอดมิน
 
@@ -118,7 +125,7 @@ src/
 │  └─ api/
 │     ├─ generate/           # POST สร้างรูป (rate limit + captcha)
 │     ├─ generations/[code]/ # สถานะ / mark ส่งเพจแล้ว
-│     ├─ me/generations/     # GET ประวัติดีไซน์ของลูกค้าที่ล็อกอิน (metadata เท่านั้น)
+│     ├─ me/generations/     # GET ดีไซน์ที่ลูกค้าบันทึกไว้ · [code]/image = บันทึก/ดู/ลบรูปที่บันทึกลงประวัติ
 │     ├─ me/favorites/       # GET/POST รายการโปรดของลูกค้าที่ล็อกอิน
 │     └─ admin/              # CRUD + dashboard (ต้อง auth)
 ├─ lib/
@@ -137,7 +144,9 @@ src/
 │  ├─ catalog.ts             # ข้อมูลที่ popup ใช้ (ไม่มี prompt)
 │  ├─ optionTypes.ts         # ชนิดตัวเลือก + ขนาดภาพ (ใช้ทั้ง server/client)
 │  ├─ designCode.ts          # สร้าง/ตรวจรูปแบบ designCode
-│  ├─ designHistory.ts       # ประวัติดีไซน์: field ที่ลูกค้าเห็นได้ + จำนวนรูปสูงสุดในเครื่อง (ไม่มี server-only)
+│  ├─ designHistory.ts       # ประวัติดีไซน์: field ที่ลูกค้าเห็นได้ + จำนวนรายการ/ขนาดรูปสูงสุด (ไม่มี server-only)
+│  ├─ designImage.ts         # ตรวจว่ารูปที่ลูกค้าส่งมาบันทึกเป็นรูปที่ AI สร้างจริง (เทียบ SHA-256)
+│  ├─ savedDesigns.ts        # ลบรูปที่บันทึกไว้เกินจำนวนสูงสุดต่อบัญชี
 │  ├─ dashboard.ts           # ตัวเลขแดชบอร์ด (aggregate ตามเวลาไทย, นับเฉพาะ success)
 │  └─ validators.ts          # Zod schemas
 ├─ models/                   # Admin, Customer, Category, Product, Option, Generation
@@ -157,9 +166,10 @@ tests/
 - รูปต้นแบบมาจากสินค้าที่แอดมินอัปเท่านั้น — ลูกค้าเลือกสินค้า ไม่ได้อัปโหลดรูปเอง
 - ตัวเลือก (Option) มี type: style*, tone*, pattern, texture, material (เลือกหลายอัน), background, camera — กำหนดใน `lib/optionTypes.ts` (* = บังคับ)
 - ทุกสินค้าต้องมี `refImage` และส่งรูปต้นแบบให้ AI แก้ทุกครั้ง (ไม่สร้างรูปจากศูนย์)
-- ทุกการสร้างรูปต้องมี `designCode` และบันทึกลง `generations` (เก็บแค่ metadata: สินค้า, ตัวเลือก, prompt, สถานะ, cost)
-- รูปที่ลูกค้าสร้าง **ไม่อัปขึ้น Cloudinary และไม่เก็บใน DB** → ส่งกลับเป็น base64 ให้ client แสดง/ดาวน์โหลดเท่านั้น
-  - ข้อยกเว้นเดียว: ลูกค้าที่ล็อกอิน เบราว์เซอร์เก็บรูปใน IndexedDB ของเครื่องตัวเอง (`designHistoryStore.ts`) สำหรับหน้า "ดีไซน์ของฉัน" — ห้ามส่งรูปกลับขึ้น server
+- ทุกการสร้างรูปต้องมี `designCode` และบันทึกลง `generations` (metadata: สินค้า, ตัวเลือก, prompt, สถานะ, cost, `imageHash`)
+- รูปที่ลูกค้าสร้าง **ไม่เก็บอัตโนมัติ** → ส่งกลับเป็น base64 ให้ client แสดง/ดาวน์โหลด
+  - เก็บบน Cloudinary เฉพาะเมื่อลูกค้าที่ล็อกอินกด "บันทึกลงประวัติ" เอง — ห้ามอัปรูปแทนลูกค้าโดยไม่กด และห้ามรับรูปที่ hash ไม่ตรงกับ `imageHash`
+  - รูปที่บันทึกเป็นของส่วนตัว: ดูได้เฉพาะเจ้าของบัญชีผ่าน `/api/me/generations/[code]/image` (ห้ามส่ง publicId/URL ของ Cloudinary ให้ client, ห้ามให้ CDN cache)
 - ใต้รูปผลลัพธ์ต้องแสดง “ภาพจำลอง สินค้าจริงอาจต่างเล็กน้อย”
 - รองรับ dark mode ผ่าน token สีใน `globals.css` (`data-theme` บน <html>) — ห้ามใช้สีตายตัว:
   การ์ด/กล่องใช้ `bg-surface` (ไม่ใช่ `bg-white`), พื้นหลังใต้ popup ใช้ `bg-scrim/…`,

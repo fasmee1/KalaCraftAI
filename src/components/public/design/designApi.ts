@@ -29,3 +29,23 @@ export async function requestDesign(
     return { ok: false, error: "เชื่อมต่อไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่" };
   }
 }
+
+/** ลูกค้าที่ล็อกอินกด "บันทึกลงประวัติ" — ส่งรูปที่ AI สร้างกลับไปเก็บ (server รับเฉพาะรูปที่ตรงกับดีไซน์นี้) */
+export async function saveDesignToHistory(
+  designCode: string,
+  imageBase64: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const res = await fetch(`/api/me/generations/${encodeURIComponent(designCode)}/image`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageBase64 }),
+    });
+    if (res.ok) return { ok: true };
+    if (res.status === 401) return { ok: false, error: "เซสชันหมดอายุ กรุณาดาวน์โหลดภาพแทน" };
+    const data = await res.json().catch(() => ({}));
+    return { ok: false, error: data.error ?? "บันทึกไม่สำเร็จ กรุณาลองใหม่" };
+  } catch {
+    return { ok: false, error: "เชื่อมต่อไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่" };
+  }
+}

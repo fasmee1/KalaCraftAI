@@ -2,6 +2,7 @@ import { getCustomerId } from "@/lib/auth";
 import { AiQuotaExceededError } from "@/lib/cloudflareAi";
 import { connectDB } from "@/lib/db";
 import { generateDesignCode } from "@/lib/designCode";
+import { hashImage } from "@/lib/designImage";
 import { editReferenceImage, estimateCostUsd, getAiProvider, type EditLevel } from "@/lib/imageAi";
 import { OPTION_TYPES, type OptionType } from "@/lib/optionTypes";
 import { translateNote } from "@/lib/noteTranslate";
@@ -104,12 +105,17 @@ export async function POST(request: Request) {
   try {
     const result = await editReferenceImage({ publicId: product.refImage.publicId, prompt: finalPrompt, aspectRatio, level });
     const durationMs = Date.now() - started;
-    await Generation.updateOne({ _id: generation._id }, { status: "success", model: result.model, durationMs });
+    // จด hash ของรูปไว้ — ลูกค้าที่ล็อกอินกด "บันทึกลงประวัติ" ได้เฉพาะรูปนี้
+    const imageHash = hashImage(Buffer.from(result.imageBase64, "base64"));
+    await Generation.updateOne(
+      { _id: generation._id },
+      { status: "success", model: result.model, durationMs, imageHash },
+    );
     console.info(
       `[generate] ${generation.designCode} ok provider=${provider} model=${result.model} ${durationMs}ms ` +
         `cost≈$${costUsd} tokens=${result.inputTokens}/${result.outputTokens}`,
     );
-    // 7. คืนรูปให้ client — ไม่เก็บรูปไว้ที่ไหน
+    // 7. คืนรูปให้ client — server ยังไม่เก็บรูป จนกว่าลูกค้าจะกดบันทึกเอง
     return Response.json({
       designCode: generation.designCode,
       imageBase64: result.imageBase64,

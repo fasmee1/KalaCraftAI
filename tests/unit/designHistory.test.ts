@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evictionCodes, HISTORY_LIMIT, toHistoryItem } from "@/lib/designHistory";
+import { toHistoryItem } from "@/lib/designHistory";
 
 const PRODUCT_ID = "64b7f0c2a1b2c3d4e5f60718";
 
@@ -10,6 +10,7 @@ const generation = (extra: Record<string, unknown> = {}) => ({
   sentToPageAt: null,
   product: { _id: PRODUCT_ID, name: "ชามกะลา", refImage: { publicId: "coconut-designs/abc123" } },
   options: [{ label: "มินิมอล" }, { label: "โทนอุ่น" }],
+  savedImage: { publicId: "coconut-designs/designs/xyz789" },
   ...extra,
 });
 
@@ -25,7 +26,13 @@ describe("toHistoryItem", () => {
       sentToPage: false,
       product: { name: "ชามกะลา", imageUrl: `/api/images/${PRODUCT_ID}?v=abc123` },
       labels: ["มินิมอล", "โทนอุ่น"],
+      imageUrl: "/api/me/generations/KC-ABC123/image?v=xyz789",
     });
+  });
+
+  it("never exposes where the saved image lives", () => {
+    const item = toHistoryItem(generation());
+    expect(JSON.stringify(item)).not.toContain("coconut-designs/designs");
   });
 
   it("marks designs already sent to the page", () => {
@@ -36,23 +43,5 @@ describe("toHistoryItem", () => {
     const item = toHistoryItem(generation({ product: null, options: [null, { label: "ลายไทย" }] }));
     expect(item.product).toBeNull();
     expect(item.labels).toEqual(["ลายไทย"]);
-  });
-});
-
-describe("evictionCodes", () => {
-  const entry = (designCode: string, createdAt: number) => ({ designCode, createdAt });
-
-  it("keeps everything while under the limit", () => {
-    expect(evictionCodes([entry("a", 1), entry("b", 2)], 2)).toEqual([]);
-  });
-
-  it("evicts the oldest entries beyond the limit", () => {
-    const entries = [entry("new", 30), entry("oldest", 10), entry("mid", 20), entry("newest", 40)];
-    expect(evictionCodes(entries, 2).sort()).toEqual(["mid", "oldest"]);
-  });
-
-  it("defaults to the history limit", () => {
-    const entries = Array.from({ length: HISTORY_LIMIT + 1 }, (_, i) => entry(`c${i}`, i));
-    expect(evictionCodes(entries)).toEqual(["c0"]);
   });
 });

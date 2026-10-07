@@ -1,10 +1,11 @@
 import "server-only";
 import { v2 as cloudinary, type UploadApiResponse } from "cloudinary";
 
-// เก็บเฉพาะรูปต้นแบบสินค้า (refImage) — รูปผลลัพธ์ของลูกค้าไม่อัปโหลดขึ้น Cloudinary
+// เก็บรูปต้นแบบสินค้า (refImage) และรูปผลลัพธ์ที่ลูกค้าที่ล็อกอินกด "บันทึกลงประวัติ" (แยกโฟลเดอร์กัน)
 // รูปทุกไฟล์อัปโหลดแบบ authenticated (ไม่ public) — เบราว์เซอร์ดูได้ผ่าน /api/images/[id] ของเราเท่านั้น
 const DELIVERY_TYPE = "authenticated";
-const SUBFOLDER = "references";
+const REFERENCE_FOLDER = "references";
+const DESIGN_FOLDER = "designs";
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 export type ImageFormat = "png" | "jpg" | "webp";
@@ -52,7 +53,7 @@ export function detectImageFormat(buf: Buffer): ImageFormat | null {
   return null;
 }
 
-export async function uploadReferenceImage(buf: Buffer): Promise<StoredImage> {
+async function uploadImage(buf: Buffer, subfolder: string): Promise<StoredImage> {
   if (buf.length === 0 || buf.length > MAX_IMAGE_BYTES) {
     throw new Error("Image size out of range");
   }
@@ -60,7 +61,7 @@ export async function uploadReferenceImage(buf: Buffer): Promise<StoredImage> {
     throw new Error("Unsupported image type");
   }
   ensureConfigured();
-  const folder = `${process.env.CLOUDINARY_FOLDER || "kalacraft"}/${SUBFOLDER}`;
+  const folder = `${process.env.CLOUDINARY_FOLDER || "kalacraft"}/${subfolder}`;
 
   const res = await new Promise<UploadApiResponse>((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
@@ -79,8 +80,13 @@ export async function uploadReferenceImage(buf: Buffer): Promise<StoredImage> {
   };
 }
 
+export const uploadReferenceImage = (buf: Buffer) => uploadImage(buf, REFERENCE_FOLDER);
+
+/** รูปผลลัพธ์ของลูกค้า — ผู้เรียกต้องตรวจก่อนว่าเป็นรูปที่ AI ของเราสร้าง (lib/designImage.ts) */
+export const uploadDesignImage = (buf: Buffer) => uploadImage(buf, DESIGN_FOLDER);
+
 /**
- * ดึงรูปต้นแบบจาก Cloudinary ของเราเอง (ย่อด้านยาวไม่เกิน maxSide) เพื่อส่งให้ AI แก้
+ * ดึงรูปจาก Cloudinary ของเราเอง (ย่อด้านยาวไม่เกิน maxSide) — รูปต้นแบบส่งให้ AI แก้ / รูปที่ส่งให้เบราว์เซอร์
  * URL สร้างจาก publicId ใน DB เท่านั้น ไม่รับ URL จากผู้ใช้ (กัน SSRF)
  */
 export async function fetchReferenceImage(

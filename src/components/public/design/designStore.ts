@@ -1,11 +1,10 @@
 "use client";
 
 import type { AspectRatioValue, DesignSelection } from "./DesignForm";
-import { rememberDesign } from "./designHistoryStore";
 
-// ภาพผลลัพธ์อยู่แค่ในแท็บนี้ (memory + sessionStorage) — ไม่อัปขึ้น server/Cloudinary/DB
+// ภาพผลลัพธ์อยู่แค่ในแท็บนี้ (memory + sessionStorage) จนกว่าลูกค้าจะกดบันทึก/ดาวน์โหลดเอง
 // sessionStorage ช่วยให้รีเฟรชหน้าผลลัพธ์แล้วภาพไม่หาย แต่ปิดแท็บแล้วหายตามที่ตั้งใจ
-// ลูกค้าที่ล็อกอิน: เก็บสำเนาไว้ใน IndexedDB ของเครื่องด้วย เพื่อดูในหน้า "ดีไซน์ของฉัน"
+// ลูกค้าที่ล็อกอิน: กด "บันทึกลงประวัติ" → รูปขึ้น server (designApi.saveDesignToHistory)
 
 export type StoredDesign = {
   designCode: string;
@@ -17,6 +16,9 @@ export type StoredDesign = {
   /** ชื่อตัวเลือกที่แสดงเป็น chip ในหน้าผลลัพธ์ */
   labels: string[];
   selection: DesignSelection;
+  /** บันทึกลงประวัติแล้ว / ดาวน์โหลดแล้ว — อย่างใดอย่างหนึ่ง = ออกจากหน้าผลลัพธ์ได้โดยไม่เตือน */
+  saved?: boolean;
+  downloaded?: boolean;
 };
 
 const DESIGN_KEY = "kc:lastDesign";
@@ -31,7 +33,6 @@ export function saveDesign(design: StoredDesign) {
   } catch {
     // พื้นที่เต็ม/โหมดส่วนตัว — ยังใช้จาก memory ได้ระหว่างอยู่ในแท็บนี้
   }
-  void rememberDesign(design);
 }
 
 export function loadDesign(): StoredDesign | null {
