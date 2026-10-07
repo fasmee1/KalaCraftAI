@@ -54,6 +54,7 @@ error จาก AI (รวมถึงถูก safety filter บล็อก �
 → ประเภทสินค้า: CRUD, เปิด/ปิด active, เรียงลำดับ
 → สินค้า: CRUD + อัป refImage (signed upload → Cloudinary) + basePrompt
 → ตัวเลือก: CRUD (type, label, promptText)
+→ ลูกค้า: รายชื่อลูกค้าที่ล็อกอิน Google (ชื่อ, อีเมล, วันที่สมัคร/เข้าใช้ล่าสุด, จำนวนดีไซน์) + ค้นหา + ระงับ/ปลดระงับ + ลบบัญชี
 → ค้นหา designCode: เห็นสินค้า + ตัวเลือก + prompt + เวลา + ชื่อ/อีเมลลูกค้าถ้าล็อกอิน (ไม่มีรูป)
 ```
 
@@ -121,7 +122,8 @@ src/
 │  │  ├─ dashboard/
 │  │  ├─ categories/
 │  │  ├─ products/
-│  │  └─ options/
+│  │  ├─ options/
+│  │  └─ customers/
 │  └─ api/
 │     ├─ generate/           # POST สร้างรูป (rate limit + captcha)
 │     ├─ generations/[code]/ # สถานะ / mark ส่งเพจแล้ว
@@ -135,7 +137,7 @@ src/
 │  ├─ gemini.ts              # เรียก Gemini แก้รูปต้นแบบ (server only)
 │  ├─ cloudinary.ts          # อัปโหลด/ลบ/สร้าง URL รูป (server only)
 │  ├─ prompt.ts              # ประกอบ prompt จาก basePrompt + options
-│  ├─ auth.ts                # NextAuth config (แอดมิน: Credentials, ลูกค้า: Google) + getAdminSession/getCustomerId
+│  ├─ auth.ts                # NextAuth config (แอดมิน: Credentials, ลูกค้า: Google) + getAdminSession/getCustomer/getCustomerId
 │  ├─ roles.ts               # เช็ค role ของ session (admin | customer)
 │  ├─ rateLimit.ts           # จำกัดครั้งต่อบัญชี/IP + งบรายวัน (รีเซ็ตเที่ยงคืนเวลาไทย)
 │  ├─ quota.ts               # จำนวนครั้งต่อวัน + เงื่อนไขการนับ (ไม่มี server-only)
@@ -211,6 +213,8 @@ tests/
 
 **A07 Authentication Failures**
 - แอดมินไม่มีระบบสมัครสมาชิก; เพิ่มแอดมินผ่าน `npm run seed` หรือหน้าแอดมินเท่านั้น — ล็อกอิน Google ได้แค่ role `customer`
+- บัญชีลูกค้าที่แอดมินระงับ (`customers.suspendedAt`): ล็อกอินไม่ได้ และ session ที่ค้างอยู่ใช้ `/api/me/*` กับ `/api/generate` ไม่ได้ — route ของลูกค้าต้องเช็คผ่าน `getCustomerId()` / `getCustomer()` เท่านั้น (เช็ค DB ทุกครั้ง) ห้ามอ่าน `customerId` จาก session ตรง ๆ
+- ลบบัญชีลูกค้า (แอดมิน): ลบรูปที่บันทึกไว้บน Cloudinary + ข้อมูลบัญชี, `generations` เก็บไว้แต่ตัดการผูกบัญชี
 - ลูกค้า Google: รับเฉพาะบัญชีที่ `email_verified`, เก็บแค่ `googleSub` + ชื่อ + อีเมล (ไม่เก็บรูปโปรไฟล์/token ของ Google)
 - ตั้ง session หมดอายุ (เช่น 8 ชม.)
 

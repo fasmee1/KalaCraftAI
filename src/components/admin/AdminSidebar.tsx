@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, LogOut, Menu, Package, SlidersHorizontal, Tags, X, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, LogOut, Menu, Package, SlidersHorizontal, Tags, Users, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -14,6 +14,7 @@ const NAV: NavItem[] = [
   { href: "/admin/categories", label: "ประเภทสินค้า", icon: Tags, ready: true },
   { href: "/admin/products", label: "สินค้า", icon: Package, ready: true },
   { href: "/admin/options", label: "ตัวเลือก", icon: SlidersHorizontal, ready: true },
+  { href: "/admin/customers", label: "ลูกค้า", icon: Users, ready: true },
 ];
 
 export function AdminSidebar({ username }: { username: string }) {

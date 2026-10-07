@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, House, Images, Menu, ShoppingBag, X, type LucideIcon } from "lucide-react";
+import { Heart, House, Images, Menu, ShoppingBag, TriangleAlert, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SessionProvider, useSession } from "next-auth/react";
@@ -41,10 +41,19 @@ function NavBar() {
   const open = openAt === pathname;
   const [scrolled, setScrolled] = useState(false);
   const favoriteCount = useFavorites().ids.size;
+  // ล็อกอินด้วยบัญชีที่ถูกระงับ → NextAuth ส่งกลับมาพร้อม ?suspended=1 (lib/auth.ts)
+  const [suspendedNotice, setSuspendedNotice] = useState(false);
 
   const isCustomer = session?.user?.role === "customer";
   const links = LINKS.filter((link) => !link.customerOnly || isCustomer);
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+
+  useEffect(() => {
+    if (!new URLSearchParams(window.location.search).has("suspended")) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- query string อ่านได้หลัง mount เท่านั้น
+    setSuspendedNotice(true);
+    window.history.replaceState(window.history.state, "", window.location.pathname);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 4);
@@ -162,6 +171,18 @@ function NavBar() {
               })}
             </ul>
           </nav>
+        </div>
+      )}
+
+      {suspendedNotice && (
+        <div role="alert" className="mx-auto w-full max-w-[1200px] px-4 pb-2 lg:px-10">
+          <p className="flex items-start gap-2 rounded-xl border border-danger/30 bg-surface px-3 py-2.5 text-sm text-danger shadow-[0_4px_20px_rgba(107,66,38,0.08)]">
+            <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <span className="flex-1">บัญชีนี้ถูกระงับการใช้งาน จึงเข้าสู่ระบบไม่ได้ หากมีข้อสงสัยกรุณาติดต่อเพจ</span>
+            <button type="button" onClick={() => setSuspendedNotice(false)} aria-label="ปิดข้อความ" className="shrink-0 text-ink-muted hover:text-ink">
+              <X className="size-4" aria-hidden />
+            </button>
+          </p>
         </div>
       )}
 

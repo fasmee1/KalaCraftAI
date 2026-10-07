@@ -9,6 +9,8 @@ const CustomerSchema = new Schema(
     email: { type: String, required: true, lowercase: true, trim: true },
     name: { type: String, default: "", trim: true },
     lastLoginAt: { type: Date, default: null },
+    // แอดมินระงับบัญชี — null = ใช้งานได้ (เช็คใน lib/auth.ts)
+    suspendedAt: { type: Date, default: null },
     // สินค้าที่กดหัวใจไว้ (รายการโปรด)
     favorites: [{ type: Schema.Types.ObjectId, ref: "Product" }],
   },

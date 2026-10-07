@@ -111,6 +111,9 @@ export const saveDesignImageSchema = z.object({
     .regex(/^[A-Za-z0-9+/]+={0,2}$/),
 });
 
+/** แอดมินระงับ/ปลดระงับบัญชีลูกค้า — แก้ได้แค่สถานะนี้ */
+export const customerPatchSchema = z.object({ suspended: z.boolean() });
+
 export const favoriteSchema = z.object({ productId: objectIdSchema, favorite: z.boolean() });
 
 /** ตัวเลือกดีไซน์ (แอดมิน) — swatch ใช้กับโทนสี, preview ใช้กับลวดลาย ชนิดอื่นจะถูกล้างเป็น null */

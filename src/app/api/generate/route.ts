@@ -1,4 +1,4 @@
-import { getCustomerId } from "@/lib/auth";
+import { getCustomer } from "@/lib/auth";
 import { AiQuotaExceededError } from "@/lib/cloudflareAi";
 import { connectDB } from "@/lib/db";
 import { generateDesignCode } from "@/lib/designCode";
@@ -37,7 +37,9 @@ export async function POST(request: Request) {
 
   // 3. rate limit ต่อบัญชี (ล็อกอิน Google) หรือต่อ IP (ไม่ล็อกอิน) + งบรายวันทั้งระบบ
   const ipHash = hashIp(ip);
-  const customerId = await getCustomerId();
+  const customer = await getCustomer();
+  if (customer?.suspended) return error("บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อเพจ", 403);
+  const customerId = customer?.id ?? null;
   const provider = getAiProvider();
   // มีคำขอพิมพ์เอง → ใช้โมเดลแก้รูปตัวใหญ่ (ทำตามคำขอได้) ซึ่งแพงกว่า — คิดงบตามระดับจริง
   const cleanNote = sanitizeNote(note);

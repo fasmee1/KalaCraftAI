@@ -13,6 +13,8 @@ const MAX_FAILED_LOGINS = 5;
 const LOCK_MS = 15 * 60 * 1000;
 const SESSION_MAX_AGE = 8 * 60 * 60; // 8 ชั่วโมง
 export const LOCKED_ERROR = "LOCKED";
+/** บัญชีลูกค้าที่ถูกระงับล็อกอินแล้วถูกส่งกลับมาที่นี่ — SiteNav แสดงข้อความแจ้ง */
+export const SUSPENDED_REDIRECT = "/?suspended=1";
 const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = process.env;
 
 // hash ไว้เทียบเมื่อไม่พบ username เพื่อให้เวลาตอบกลับใกล้เคียงกรณีรหัสผิด
@@ -78,7 +80,14 @@ export const authOptions: NextAuthOptions = {
       if (account?.provider !== "google") return true;
       // รับเฉพาะบัญชีที่ Google ยืนยันอีเมลแล้ว
       const google = profile as GoogleProfile | undefined;
-      return google?.email_verified === true && Boolean(google.email);
+      if (google?.email_verified !== true || !google.email) return false;
+      // บัญชีที่แอดมินระงับ → ไม่ออก session ให้
+      await connectDB();
+      const suspended = await Customer.exists({
+        googleSub: String(account.providerAccountId),
+        suspendedAt: { $ne: null },
+      });
+      return suspended ? SUSPENDED_REDIRECT : true;
     },
     async jwt({ token, user, account, profile }) {
       if (!user) return token;
@@ -116,8 +125,21 @@ export async function getAdminSession() {
   return isAdminSession(session) ? session : null;
 }
 
-/** id ของลูกค้าที่ล็อกอินด้วย Google — null ถ้าไม่ได้ล็อกอิน (หรือเป็นแอดมิน) */
-export async function getCustomerId(): Promise<string | null> {
+/**
+ * ลูกค้าที่ล็อกอินด้วย Google — null ถ้าไม่ได้ล็อกอิน เป็นแอดมิน หรือบัญชีถูกลบไปแล้ว
+ * เช็คฐานข้อมูลทุกครั้ง เพราะ session (JWT) ยังใช้ได้ถึง 8 ชม. หลังแอดมินระงับ/ลบบัญชี
+ */
+export async function getCustomer(): Promise<{ id: string; suspended: boolean } | null> {
   const session = await getServerSession(authOptions);
-  return isCustomerSession(session) ? (session.user?.customerId ?? null) : null;
+  const id = isCustomerSession(session) ? session.user?.customerId : undefined;
+  if (!id) return null;
+  await connectDB();
+  const customer = await Customer.findById(String(id)).select("suspendedAt").lean();
+  return customer ? { id, suspended: Boolean(customer.suspendedAt) } : null;
+}
+
+/** id ของลูกค้าที่ใช้งานได้ — null ถ้าไม่ได้ล็อกอิน เป็นแอดมิน หรือบัญชีถูกระงับ/ลบ */
+export async function getCustomerId(): Promise<string | null> {
+  const customer = await getCustomer();
+  return customer && !customer.suspended ? customer.id : null;
 }

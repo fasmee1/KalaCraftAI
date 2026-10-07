@@ -253,12 +253,15 @@ export function inputClass(error?: string) {
 export function DeleteDialog({
   title,
   name,
+  note = "ลบแล้วกู้คืนไม่ได้ ถ้าแค่ไม่ต้องการให้ลูกค้าเห็น ให้ปิดสถานะแทน",
   url,
   onClose,
   onDeleted,
 }: {
   title: string;
   name: string;
+  /** คำเตือนใต้ชื่อ — บอกผลของการลบ */
+  note?: string;
   url: string;
   onClose: () => void;
   onDeleted: () => void;
@@ -283,7 +286,7 @@ export function DeleteDialog({
         <p className="text-[15px]">
           ต้องการลบ <strong className="text-primary">&ldquo;{name}&rdquo;</strong> ใช่ไหม?
         </p>
-        <p className="text-sm text-ink-muted">ลบแล้วกู้คืนไม่ได้ ถ้าแค่ไม่ต้องการให้ลูกค้าเห็น ให้ปิดสถานะแทน</p>
+        <p className="text-sm text-ink-muted">{note}</p>
         <FormError message={error} />
       </ModalBody>
       <ModalFooter>
